@@ -28,9 +28,11 @@ def visualize_set_tube(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,tube_size=0.
         v=np.dot(state.G,vertices)
         v=Minkowski_hull(v.T,(vertices_0.T*tube_size)).T
         p_list.append(patches.Polygon(v.T+state.x.T, True))
-    p=PatchCollection(p_list, alpha=0.4,color=(0.5,0.2,0.7))
+    p=PatchCollection(p_list, alpha=0.4,color=(0.2,0.2,0.7))
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
+    ax1.set_xlabel('Height')
+    ax1.set_ylabel('Velocity')
     plt.show()
     
 def Minkowski_hull(p1,p2):

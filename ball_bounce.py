@@ -15,7 +15,7 @@ from auxilary_methods import vertices_cube
 # Code:
 s=system(2,1)
 s.modes=[0,1]
-dt=0.025
+dt=0.05
 
 K=40
 g=9.8
@@ -69,4 +69,4 @@ s.weight={}
 s.weight[0]=16
 s.weight[1]=1
 
-goal=state(np.array([(xmax+y_p)/2,0]).reshape(2,1),np.array([[(xmax-y_p)/2,0],[0,vmax]]),0,0,0,10)
+s.goal=state(np.array([(xmax+y_p)/2,0]).reshape(2,1),np.array([[(xmax-y_p)/2,0],[0,1]]),0,0,0,10)

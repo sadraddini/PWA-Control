@@ -6,6 +6,7 @@ Created on Mon Jul  2 14:55:26 2018
 @author: sadra
 """
 import numpy as np
+import random as random
 
 def find_mode(s,x,eps=10**-9):
     """
@@ -49,3 +50,9 @@ def vertices_cube(T):
     from itertools import product 
     v=list(product(*zip([-1]*T,[1]*T)))
     return np.array(v)
+
+def sample(l,u):
+    """
+    Description: sample from box of l:lower corner, u: upper corner, with uniform distribution
+    """
+    return l+(u-l)*np.random.random_sample(l.shape)

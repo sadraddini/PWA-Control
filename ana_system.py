@@ -77,5 +77,5 @@ class tree:
         self.nodes=[goal]
         self.edges=[]
         self.weight={}
-        
-        
+        self.value_function={}
+        self.successor={}
