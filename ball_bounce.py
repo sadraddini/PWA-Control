@@ -15,7 +15,7 @@ from auxilary_methods import vertices_cube
 # Code:
 s=system(2,1)
 s.modes=[0,1]
-dt=0.05
+dt=0.025
 
 K=40
 g=9.8

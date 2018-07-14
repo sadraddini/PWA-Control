@@ -17,9 +17,12 @@ import random as random
 def visualize_set_tube(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,tube_size=0.01):
     from matplotlib.collections import PatchCollection
     ax1 = plt.subplot(111)
-    plt.figure(figsize=(30,10))
+    plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
+    ax1.set_xlabel('Height')
+    ax1.set_ylabel('Velocity')
     ax1.set_xlim([xmin,xmax])
     ax1.set_ylim([ymin,ymax])
+    ax1.autoscale_view()
     vertices_0=np.array([[1,1,-1,-1],[1,-1,-1,1]])
     # Trajectories
     p_list=[]

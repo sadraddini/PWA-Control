@@ -27,8 +27,6 @@ class state:
         self.mode=mode
         self.ID=ID
         self.t=t
-        self.edge=[]
-        self.successor=[]
         self.character=character # 1 for in, 2 for out, 0 for string, -1 for self-loop, 3 for weaving, 4 for backward Funnel, 6: free end funnel, 7: state_end funnel
         v=vertices_cube(G.shape[1])
         self.vertices=(np.dot(G,v.T)).T

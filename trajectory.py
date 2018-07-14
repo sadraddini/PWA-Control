@@ -230,8 +230,8 @@ def make_state_trajectory_state_end(s,x,u,seq,G,theta,T,state_end):
         x_temp[t].time_to_go=T-t+state_end.time_to_go
     # Build Transitons
     for t in range(0,T-1):
-        x_temp[t].edge.append((x_temp[t+1],u[t],theta[t]))
-    x_temp[T-1].edge.append((state_end,u[T-1],theta[T-1]))
+        x_temp[t].successor=(x_temp[t+1],u[t],theta[t])
+    x_temp[T-1].successor=(state_end,u[T-1],theta[T-1])
     s.X.extend(x_temp.values())
     
 
