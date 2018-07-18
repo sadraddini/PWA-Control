@@ -9,8 +9,8 @@ Created on Mon Jul  2 14:37:00 2018
 from ball_bounce import *
 
 
-from trajectory import polytope_trajectory,make_state_trajectory_state_end
-from visualization import visualize_set_tube
+from main.trajectory import polytope_trajectory,make_state_trajectory_state_end
+from main.visualization import visualize_set_tube
 
 from tree_locator import array_tree,d_tree
 from tree import extend_RRT

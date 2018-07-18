@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from random import choice as rchoice
 
-from auxilary_methods import vertices_cube
+from main.auxilary_methods import vertices_cube
 
 
 class state:
@@ -40,6 +40,7 @@ class state:
         self.backward_zero=-1 # 0 for not computed, -1 for computed but not useful, 1 some large regions leading it have been computed!
         self.cost_to_go=0
         self.time_to_go=0
+        self.cost_to_child=0
             
     def __repr__(self):
         return self.name
@@ -72,6 +73,8 @@ class system:
         # List of no transitions
         self.blocked_transitions=[]
         # cost functions
+        self.tree_iterations=0
+        self.tree_size={}
         
     def __repr__(self):
         return self.name+" with "+str(len(self.modes))+" modes"
@@ -91,4 +94,9 @@ class tree:
         self.successor={}
         
 def cost_state(s):
-    pass
+    """
+    Asscoiate each state and its child transition a cost
+    """
+    if s==s.goal:
+        pass
+    Q=0

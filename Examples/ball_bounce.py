@@ -7,10 +7,12 @@ Created on Mon Jul  2 15:36:54 2018
 """
 # External imports
 import numpy as np
+import sys
+sys.path.append('..')
 
 # Internal imports
-from ana_system import system,state
-from auxilary_methods import vertices_cube
+from main.ana_system import system,state
+from main.auxilary_methods import vertices_cube
 
 # Code:
 s=system(2,1)

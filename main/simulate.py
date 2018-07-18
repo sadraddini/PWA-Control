@@ -8,8 +8,8 @@ Created on Thu Jul 12 11:09:51 2018
 
 import numpy as np
 
-from auxilary_methods import find_mode,inside_X
-from controller import control_vanilla
+from main.auxilary_methods import find_mode,inside_X
+from main.controller import control_vanilla
 
 def simulate_vanilla(s,x):
     t=0
@@ -23,7 +23,7 @@ def simulate_vanilla(s,x):
     
 def evolve(s,x,u):
     i=find_mode(s,x)
-    print("x=",x.T,"u=",u,"i=",i,"\n")
+#    print("x=",x.T,"u=",u,"i=",i,"\n")
     return np.dot(s.A[i],x)+np.dot(s.B[i],u)+s.c[i]#+(np.random.random((2,1))-0.5)*0.00001
 
 def simulate_0(s,x,T):

@@ -14,8 +14,8 @@ from gurobipy import Model,GRB,LinExpr,QuadExpr
 from random import choice as rchoice
 
 # Secondary imports
-from auxilary_methods import find_mode,valuation,mode_sequence
-from ana_system import state
+from main.auxilary_methods import find_mode,valuation,mode_sequence
+from main.ana_system import state
 
 def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1):
     model=Model("trajectory of polytopes")
@@ -92,8 +92,8 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1):
     model.update()
     for row in range(s.n):
         for column in range(s.n):
-            if row<column:
-#                continue
+            if row>column:
+                continue
                 model.addConstr(G[0][row,column]==0)
             elif row==column:
                 model.addConstr(G[0][row,column]>=d_min)
@@ -113,20 +113,22 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1):
         for row in range(s.n):
             x_delta[row]=model.addVar(lb=-eps,ub=eps*s.weight[row])
         model.update()
-        print("only area!")
+#        print("only area!")
         for row in range(s.n):
             model.addConstr(x[0][row,0]==x0[row,0]+x_delta[row])
         model.setObjective(J_area)
         model.optimize()
     else:          
-        J_start=QuadExpr()
-        for row in range(s.n):
-            J_start.add(s.weight[row]*x[0][row,0]*x[0][row,0]-2*s.weight[row]**2*x0[row,0]*x[0][row,0])
-        model.setObjective(J_area+alpha_start*J_start)
+#        J_start=QuadExpr()
+#        for row in range(s.n):
+#            J_start.add(s.weight[row]*x[0][row,0]*x[0][row,0]-2*s.weight[row]**2*x0[row,0]*x[0][row,0])
+#        model.setObjective(J_area+alpha_start*J_start)
+        model.setObjective(J_area)
         model.optimize()
     if model.Status!=2 and model.Status!=11:
         flag=False
-        print("*"*20,"Flag is False and Status is",model.Status)
+#        print("*"*20,"Flag is False and Status is",model.Status)
+        print("*"*20,"False flag",model.Status)
         return (x,u,G,theta,z,flag)
     else:
         flag=True
@@ -136,90 +138,9 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1):
         G_n=valuation(G)
         theta_n=valuation(theta)
         z_n=mode_sequence(s,z)
-#        print("--"*20,"final")
-#        print ("new:",G_n[0],np.linalg.det(G_n[0]))
-#        print("initial x0 was",x0.T)
-#        print("final x0 is",x_n[0].T)
-#        print("final G0 is",G_n[0])
         if abs(np.linalg.det(G_n[0]))<10**-5:
             flag=False
         return (x_n,u_n,G_n,theta_n,z_n,flag)
-    
-def grow_tree_exact(s,i,T,alpha,eps=0.01):
-    x0=sample(s.l[i],s.u[i])
-    if is_inside_machine_state(s,x0,eps)==True:
-        print("covered!: %d"%i)
-        return
-    else:
-        for branch in list(s.branches)[::-1]:
-            for state_x in list(branch):
-#                print("evaluating with alpha",state_x,"alpha=",alpha)
-                for Tau in range(5,T):
-                    s.factor=1.0
-                    (x,u,G,theta,z,flag)=funnel_to_state_multi_mode(s,x0,state_x,Tau,alpha)
-                    x0_new=x[0]
-                    if flag==True:
-                        if are_all_vertices_inside_machine(s,x0_new,G[0],eps)==True:
-                            print("all vertices covered after optimization! tau=",Tau,"x0 was",x0.T," x0_new=",x0_new.T)
-                            continue
-                        else:
-                            make_state_trajectory_state_end(s,x,u,z,G,theta,Tau,state_x)
-                            return # Ignorring the sript below:
-                        if is_inside_machine_state(s,x0_new,eps)==True:
-                            print("covered after optimization! tau=",Tau,"x0 was",x0.T," x0_new=",x0_new.T)
-                            continue
-                        else:
-                            print("generating exactness",state_x)
-                            (x,u,G,theta,z,flag)=funnel_to_state_multi_mode(s,x0_new,state_x,Tau,10000)
-                            if flag==False:
-                                print("flag is false! for Tau=",Tau)
-                                continue
-                                raise(ValueError("flag is false! for Tau=",Tau))
-                            make_state_trajectory_state_end(s,x,u,z,G,theta,Tau,state_x)
-                            return
-                    else:
-                        print("no %d trajectory exists to state with"%Tau ,state_x.x.T,"alpha was",alpha)
-                        continue    
-
-def grow_tree_exact_initial(s,x0,T,alpha,eps=0.01,max_iterations=10):
-    for branch in list(s.branches)[::-1]:
-        for state_x in list(branch):
-            (x,u,G,theta,z,flag)=funnel_to_state_multi_mode(s,x0,state_x,T,alpha)
-            if flag==True:
-                print("flag is TRUE!")
-                if are_all_vertices_inside_machine(s,x[0],G[0],eps)==True:
-                    print("all vertices covered after optimization! T=",T,"x0 was",x0.T," x0_new=",x[0].T)
-                    continue
-                else:
-                    print("goal state is",state_x)
-                    make_state_trajectory_state_end(s,x,u,z,G,theta,T,state_x)
-                    return 
-            else:
-                print("no %d trajectory exists to state with"%T ,state_x.x.T,"alpha was",alpha)
-                continue
-    return                  
-    
-def are_all_vertices_inside_machine(s,x,G,eps):
-    v=vertices_cube(G.shape[1])
-    vertices=(np.dot(G,v.T)+x).T
-    if  is_inside_machine_state(s,x,eps)==False:
-        return False
-    for i in range(vertices.shape[0]):
-        vertex_to_check=vertices[i,:].reshape(G.shape[1],1)
-        if is_inside_machine_state(s,vertex_to_check,eps)==False:
-            return False
-    return True
-                
-def make_state_trajectory_free(s,x,u,seq,G,theta,T):
-    x_temp={}
-    ID=rchoice(range(1000))
-    for t in range(0,T+1):
-        x_temp[t]=state(x[t],G[t],seq[t],ID,t,6)
-    # Build Transitons
-    for t in range(0,T):
-        x_temp[t].edge.append((x_temp[t+1],u[t],theta[t]))
-    s.X.extend(x_temp.values())
-    s.branches.append(x_temp.values())
     
 def make_state_trajectory_state_end(s,x,u,seq,G,theta,T,state_end):
     x_temp={}
@@ -233,27 +154,6 @@ def make_state_trajectory_state_end(s,x,u,seq,G,theta,T,state_end):
     x_temp[T-1].successor=(state_end,u[T-1],theta[T-1])
     s.X.extend(x_temp.values())
     
-
-    
-def make_zero_alpha_backward_state(s,state_goal,T,i,eps):
-    x0=sample(s.l[0],s.u[0])
-    (x,u,G,theta,z,flag)=funnel_to_state_multi_mode(s,x0,state_goal,T,0)
-    if flag==True:
-        print("flag is TRUE!")
-        if are_all_vertices_inside_machine(s,x[0],G[0],eps)==True:
-            print("all vertices covered after optimization! T=",T,"x0 was",x0.T," x0_new=",x[0].T)
-            state_goal.backward_zero=-1
-        else:
-            make_state_trajectory_state_end(s,x,u,z,G,theta,T,state_goal)
-            state_goal.backward_zero=1
-            
-    else:
-        print("no alpha-zero %d trajectory exists to state with"%T ,state_goal.x.T)
-        state_goal.backward_zero=-2
-
-def make_zero_alpha_backward_set(s,T,i,eps):
-    for state_goal in [x for x in s.X if x.mode==i and x.mode==0]:
-        make_zero_alpha_backward_state(s,state_goal,T,i,eps)
 
 def subset_MILP(model,G,Pi,H,h,x,z_time_mode):
     """

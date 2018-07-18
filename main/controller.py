@@ -6,7 +6,7 @@ Created on Thu Jul 12 10:51:52 2018
 @author: sadra
 """
 import numpy as np
-from tree_locator import tree_locator
+from main.tree_locator import tree_locator
 
 def control_vanilla(s,x):
     x_state=tree_locator(s,x)

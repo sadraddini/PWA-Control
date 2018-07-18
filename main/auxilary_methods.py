@@ -6,7 +6,6 @@ Created on Mon Jul  2 14:55:26 2018
 @author: sadra
 """
 import numpy as np
-import random as random
 
 def find_mode(s,x,eps=10**-9):
     """

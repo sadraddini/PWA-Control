@@ -8,7 +8,7 @@ Created on Thu Jul 12 10:38:54 2018
 
 import numpy as np
 
-from auxilary_methods import find_mode
+from main.auxilary_methods import find_mode
 
 
 def array_tree(s):
