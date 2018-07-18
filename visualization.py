@@ -14,6 +14,8 @@ from auxilary_methods import vertices_cube
 import numpy as np
 import random as random
 
+from ana_system import states_time_order
+
 def visualize_set_tube(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,tube_size=0.01):
     from matplotlib.collections import PatchCollection
     ax1 = plt.subplot(111)
@@ -37,6 +39,33 @@ def visualize_set_tube(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,tube_size=0.
     ax1.set_xlabel('Height')
     ax1.set_ylabel('Velocity')
     plt.show()
+
+
+def visualize_X_eps(s,xmin=-1,xmax=1,ymin=-1,ymax=1):
+    from matplotlib.collections import PatchCollection
+    ax1 = plt.subplot(111)
+    plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
+    ax1.set_xlabel('Height')
+    ax1.set_ylabel('Velocity')
+    ax1.set_xlim([xmin,xmax])
+    ax1.set_ylim([ymin,ymax])
+    ax1.autoscale_view()
+    vertices_0=np.array([[1,1,-1,-1],[1,-1,-1,1]])
+    # Trajectories
+    p_list=[]
+    STATES=states_time_order(s)
+    for state in STATES[::-1]:
+        vertices=vertices_cube(state.G.shape[1]).T
+        v=np.dot(state.G_eps,vertices)
+        p_list.append(patches.Polygon(v.T+state.x.T, True))
+    max_T=max([state.time_to_go for state in STATES])
+    p=PatchCollection(p_list,color=[(state.time_to_go/max_T,1-state.time_to_go/max_T,0.2) for state in STATES[::-1]])
+    ax1.add_collection(p)
+    ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
+    ax1.set_xlabel('Height')
+    ax1.set_ylabel('Velocity')
+    plt.show()
+
     
 def Minkowski_hull(p1,p2):
     """

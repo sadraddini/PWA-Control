@@ -16,14 +16,21 @@ from auxilary_methods import vertices_cube
 
 
 class state:
-    def __init__(self,x,G,mode,ID,t,character):
+    def __init__(self,x,G,mode,ID,t,character,epsilon=10**-8):
         self.name="s"+str(ID)+"-"+str(mode)+"-"+str(t)+"-"+str(character)
         self.x=x
         self.G=G
         self.Ginv=np.linalg.pinv(G)
+        if np.linalg.det(G)<10**-6:
+            (U,s,V)=np.linalg.svd(G)
+            self.G_eps=np.dot(U,np.dot(np.diag(s+epsilon),V))
+            self.G_eps_inv=np.linalg.pinv(self.G_eps)
+        else: # Large volume:
+            self.G_eps=self.G
+            self.G_eps_inv=self.Ginv
         if G.shape[0]==G.shape[1]:
             self.volume=abs(np.linalg.det(G))
-            self.volume_flag=abs(np.linalg.det(G))>10**-9
+        self.volume_flag=self.volume>10**-8
         self.mode=mode
         self.ID=ID
         self.t=t
@@ -68,6 +75,11 @@ class system:
         
     def __repr__(self):
         return self.name+" with "+str(len(self.modes))+" modes"
+    
+def states_time_order(s):
+    indices=list(np.argsort(np.array([x.time_to_go for x in s.X])))
+    return [s.X[i] for i in indices]
+    
 
 class tree:
     def __init__(self,goal):
@@ -77,3 +89,6 @@ class tree:
         self.weight={}
         self.value_function={}
         self.successor={}
+        
+def cost_state(s):
+    pass

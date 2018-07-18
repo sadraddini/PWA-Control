@@ -56,3 +56,14 @@ def sample(l,u):
     Description: sample from box of l:lower corner, u: upper corner, with uniform distribution
     """
     return l+(u-l)*np.random.random_sample(l.shape)
+
+def inside_X(s,x,eps=10**-9):
+    """
+    Description: x inside state-space: True, Otherwise: False
+    """
+    for mode in s.modes:
+        if np.amin(s.h[mode]-np.dot(s.H[mode],x))>=-eps:
+            return True
+    return False
+        
+            

@@ -10,6 +10,58 @@ import numpy as np
 
 from auxilary_methods import find_mode
 
+
+def array_tree(s):
+    N=len(s.X)
+    s.x_vector=np.empty((N,s.n,1))
+    s.G_eps_vector=np.empty((N,s.n,s.n))
+    s.G_eps_inv_vector=np.empty((N,s.n,s.n))
+    for index in range(N):
+        s.x_vector[index,:,:]=s.X[index].x
+        s.G_eps_vector[index,:,:]=s.X[index].G_eps
+        s.G_eps_inv_vector[index,:,:]=s.X[index].G_eps_inv
+
+def d_tree(s,x,bigM_mode=100):
+    """
+    Note: array_tree should be constructed before.
+    """
+    i=find_mode(s,x)
+    mode_distance=np.array([y.mode!=i for y in s.X]).reshape(len(s.X),1)*bigM_mode
+    p_eps=np.matmul(s.G_eps_inv_vector,x-s.x_vector)
+    p_eps_star=np.maximum(np.minimum(p_eps,1),-1)
+    d=np.amax(abs(np.matmul(s.G_eps_vector,p_eps_star-p_eps)),axis=1)
+    return d+mode_distance
+
+def sorted_distance_states(s,x):
+    N=len(s.X)
+    d=d_tree(s,x).reshape(N)
+    indices=list(np.argsort(d))
+    return [s.X[i] for i in indices]
+
+def zero_distance_states(s,x):
+    return [s.X[index] for index in range(len(s.X)) if d_tree(s,x)[index][0]<10**-8]
+    
+def tree_locator(s,x):
+    pass
+
+def inside_tree(s,x):
+    if zero_distance_states(s,x)==[]:
+        return False
+    else:
+        return True
+    
+def all_vertices_out_of_tree(s,x,G):
+    if inside_tree(s,x)==True:
+        return False
+    for i in range(2**s.n):
+        if (s,x+np.dot(G,s.vertices[i,:].T))==True:
+            return False
+    return True
+    
+"""
+OLD MATERIAL: Going to be removed
+"""    
+
 def array(s,target):
     """
     Description: 
@@ -72,7 +124,10 @@ def state_in_graph_set_distances(s,x,target):
     return [target[index] for index in range(len(d)) if d[index]<=10**-8]
 
 
-def tree_locator(s,x):
+def tree_locator_old(s,x):
+    """
+        WARNING: to be removed in the next commit
+    """
     target=s.X
     exact=state_in_graph_set_volumes(s,x,target)+state_in_graph_set_distances(s,x,target)
     if exact!=[]:
@@ -88,7 +143,7 @@ def tree_locator(s,x):
             print("-"*10,"Warning: out of finite-state system: distance based:",d)
             return state_d 
         
-def inside_tree(s,x,eps):
+def inside_tree_old(s,x,eps):
     array(s,s.X)
     exact=state_in_graph_set_volumes(s,x,s.X)+state_in_graph_set_distances(s,x,s.X)
     if exact!=[]:
@@ -97,7 +152,7 @@ def inside_tree(s,x,eps):
         (state_d,d)=state_closest_distance(s,x,s.X)
         (state_v,v)=state_closest_volume(s,x,s.X)
         return min(v,d)<=eps
-            return state_d
+    return state_d
 
 def tree_K_nearest(s,x,K):
     array(s,s.X)
@@ -122,6 +177,4 @@ def tree_K_nearest(s,x,K):
     exact=state_in_graph_set_volumes(s,x,s.X)+state_in_graph_set_distances(s,x,s.X)
     (state_d,d)=state_closest_distance(s,x,s.X)
     (state_v,v)=state_closest_volume(s,x,s.X)
-    return min(v,d)<=eps
-        return state_d
-    
+    return state_d

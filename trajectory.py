@@ -17,7 +17,7 @@ from random import choice as rchoice
 from auxilary_methods import find_mode,valuation,mode_sequence
 from ana_system import state
 
-def polytope_trajectory(s,x0,state_end,T,alpha_start):
+def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1):
     model=Model("trajectory of polytopes")
     x={}
     u={}
@@ -107,12 +107,11 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start):
     i_start=find_mode(s,x0)
     for i in s.modes:
         model.addConstr(z[0,i]==int(i==i_start))
-#    model.setParam('OutputFlag',False)
+    model.setParam('OutputFlag',False)
     if alpha_start==-1:
-        eps=0.1
         x_delta={}
         for row in range(s.n):
-            x_delta[row]=model.addVar(lb=-eps,ub=eps)
+            x_delta[row]=model.addVar(lb=-eps,ub=eps*s.weight[row])
         model.update()
         print("only area!")
         for row in range(s.n):
@@ -122,7 +121,7 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start):
     else:          
         J_start=QuadExpr()
         for row in range(s.n):
-            J_start.add(s.weight[row]*x[0][row,0]*x[0][row,0]-2*s.weight[row]*x0[row,0]*x[0][row,0])
+            J_start.add(s.weight[row]*x[0][row,0]*x[0][row,0]-2*s.weight[row]**2*x0[row,0]*x[0][row,0])
         model.setObjective(J_area+alpha_start*J_start)
         model.optimize()
     if model.Status!=2 and model.Status!=11:
@@ -139,9 +138,9 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start):
         z_n=mode_sequence(s,z)
 #        print("--"*20,"final")
 #        print ("new:",G_n[0],np.linalg.det(G_n[0]))
-        print("initial x0 was",x0.T)
-        print("final x0 is",x_n[0].T)
-        print("final G0 is",G_n[0])
+#        print("initial x0 was",x0.T)
+#        print("final x0 is",x_n[0].T)
+#        print("final G0 is",G_n[0])
         if abs(np.linalg.det(G_n[0]))<10**-5:
             flag=False
         return (x_n,u_n,G_n,theta_n,z_n,flag)
