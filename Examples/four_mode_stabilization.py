@@ -11,8 +11,8 @@ import sys
 sys.path.append('..')
 
 # Internal imports
-from ana_system import system,state
-from auxilary_methods import vertices_cube
+from main.ana_system import system,state
+from main.auxilary_methods import vertices_cube
 
 
 s=system(2,1)
@@ -67,8 +67,8 @@ for i in s.modes:
     s.W[i]=np.array([[0,0],[0,1]])
     
 s.weight={}
-s.weight[0]=1
-s.weight[1]=1
+s.weight[0]=0.2
+s.weight[1]=0.2
 
 s.vertices=vertices_cube(2)
 

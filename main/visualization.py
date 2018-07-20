@@ -32,8 +32,8 @@ def visualize_set_tube(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,tube_size=0.
     # Trajectories
     p_list=[]
     for state in list_of_states:
-        vertices=vertices_cube(state.G.shape[1]).T
-        v=np.dot(state.G,vertices)
+#        vertices=vertices_cube(state.G.shape[1]).T
+        v=np.dot(state.G,vertices_0)
         v=Minkowski_hull(v.T,(vertices_0.T*tube_size)).T
         p_list.append(patches.Polygon(v.T+state.x.T, True))
     p=PatchCollection(p_list, alpha=0.4,color=(0.2,0.2,0.7))
@@ -44,7 +44,7 @@ def visualize_set_tube(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,tube_size=0.
     plt.show()
 
 
-def visualize_X_eps(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2'):
+def visualize_X_eps(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
     ax1 = plt.subplot(111)
     plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
     ax1.set_xlabel(xlabel)
@@ -63,6 +63,7 @@ def visualize_X_eps(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2'):
     p=PatchCollection(p_list,color=[(state.time_to_go/max_T,1-state.time_to_go/max_T,0) for state in STATES[::-1]])
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
+    ax1.set_title(title)
     plt.show()
     return plt
 
@@ -102,6 +103,7 @@ def visualize_subset_tree(s,iterations,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1
     p=PatchCollection(p_list,color=(0.3,0.3,0.3))
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
+    ax1.set_title(str(iterations)+" iterations,  "+str(s.tree_size[iterations])+" polytopes")
     plt.show()
     return plt
     

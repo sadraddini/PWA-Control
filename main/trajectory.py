@@ -12,12 +12,13 @@ Created on Mon June 25 2018
 import numpy as np
 from gurobipy import Model,GRB,LinExpr,QuadExpr
 from random import choice as rchoice
+from random import random
 
 # Secondary imports
 from main.auxilary_methods import find_mode,valuation,mode_sequence
 from main.ana_system import state
 
-def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1):
+def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
     model=Model("trajectory of polytopes")
     x={}
     u={}
@@ -88,19 +89,22 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1):
     # set objective
     J_area=LinExpr()
     d_min=model.addVar(lb=0.0001)
-    beta=10**1 # Weight of infinity norm
+    beta=10**0 # Weight of infinity norm
     model.update()
     for row in range(s.n):
         for column in range(s.n):
-            if row>column:
-                continue
-                model.addConstr(G[0][row,column]==0)
-            elif row==column:
-                model.addConstr(G[0][row,column]>=d_min)
+            if coin<0.33:
+                if row<column:
+                    model.addConstr(G[0][row,column]==0)
+            elif coin>0.67:
+                if row>column:
+                    model.addConstr(G[0][row,column]==0)                
+            if row==column:
+                model.addConstr(G[0][row,column]>=d_min/s.weight[row])
     J_area.add(-d_min*T*s.n*beta)
     for row in range(s.n):
         for t in range(T):
-            J_area.add(-G[t][row,row])
+            J_area.add(-G[t][row,row]*s.weight[row])
     # Terminal Constraint
     terminal_constraint(s,x,G,T,model,state_end)
     # Starting Point
@@ -111,7 +115,7 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1):
     if alpha_start==-1:
         x_delta={}
         for row in range(s.n):
-            x_delta[row]=model.addVar(lb=-eps,ub=eps*s.weight[row])
+            x_delta[row]=model.addVar(lb=-eps/s.weight[row],ub=eps/s.weight[row])
         model.update()
 #        print("only area!")
         for row in range(s.n):

@@ -39,13 +39,14 @@ def extend_RRT(s,T,alpha_start=10**5,eps=0.1):
             if flag==True:
                 if all_vertices_out_of_tree(s,x[0],G[0])==True:
                     make_state_trajectory_state_end(s,x,u,z,G,theta,T,state_end)
+                    print("Connected to Tree")
                     return True
                 
-def Random_Tree_of_Polytopes(s,T_max=10):
+def Random_Tree_of_Polytopes(s,T_max=10,eps_max=1):
     for t in range(0,500):
         print("*"*100,"iteration",t)
         T=randint(1,T_max)
-        flag=extend_RRT(s,T,alpha_start=-1,eps=random())
+        flag=extend_RRT(s,T,alpha_start=-1,eps=random()*eps_max)
         if flag==True:
             s.tree_iterations+=1
             s.tree_size[s.tree_iterations]=len(s.X)

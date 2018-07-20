@@ -6,7 +6,7 @@ Created on Mon Jul  2 14:37:00 2018
 @author: sadra
 """
 
-from ball_bounce import *
+from Examples.ball_bounce import *
 
 
 from main.trajectory import polytope_trajectory,make_state_trajectory_state_end

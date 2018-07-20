@@ -11,8 +11,8 @@ import numpy as np
 import sys
 sys.path.append('..')
 # Internal imports
-from ana_system import system,state
-from auxilary_methods import vertices_cube
+from main.ana_system import system,state
+from main.auxilary_methods import vertices_cube
 
 
 s=system(2,1)
@@ -52,10 +52,10 @@ s.vertices=vertices_cube(2)
 s.W={}
 
 s.weight={}
-s.weight[0]=10
+s.weight[0]=100/12
 s.weight[1]=1
 
 for i in s.modes:
     s.W[i]=np.array([[1,1],[1,1]])
     
-s.goal=state(np.array([0,0]).reshape(2,1),np.array([[0.0,0],[0,0.0]]),0,0,0,10)
+s.goal=state(np.array([0,0]).reshape(2,1),np.array([[0.,0],[0,0.0]]),0,0,0,10)
