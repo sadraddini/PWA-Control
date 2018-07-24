@@ -82,7 +82,10 @@ class system:
 def states_time_order(s):
     indices=list(np.argsort(np.array([x.time_to_go for x in s.X])))
     return [s.X[i] for i in indices]
-    
+
+def states_cost_order(s):
+    indices=list(np.argsort(np.array([x.cost_to_go for x in s.X])))
+    return [s.X[i] for i in indices]    
 
 class tree:
     def __init__(self,goal):
@@ -93,10 +96,49 @@ class tree:
         self.value_function={}
         self.successor={}
         
-def cost_state(s):
+def cost_state_old(s,state_considered,L,Q,gamma):
     """
     Asscoiate each state and its child transition a cost
+    Assumption: paralleltopes
     """
     if s==s.goal:
-        pass
-    Q=0
+        return 0
+    model=Model("trajectory of polytopes")
+    p={}
+    for row in range(s.n):
+        p[row]=model.addVar(lb=-1,ub=1)
+    model.update()
+    GLG=np.dot(state_considered.G.T,np.dot(L,state_considered.G))
+    theta=state_considered.successor[2]
+    u=state_considered.successor[1]
+    i=state_considered.mode
+    theta_Q_theta=np.dot(theta.T,np.dot(Q,theta))
+    J=QuadExpr()
+    for row in range(s.n):
+        for k in range(s.n):
+            J.add(p[row]*p[k]*GLG[row,k]+p[row]*p[k]*theta_Q_theta[row,k])
+    model.setParam('OutputFlag',False)
+    model.setObjective(J)
+    model.optimize()
+    return model.ObjVal+np.asscalar(np.dot(state_considered.x.T,np.dot(L,state_considered.x))+np.dot(u.T,np.dot(Q,u))+gamma)  
+
+def cost_state(s,state_considered,L,Q,gamma):
+    """
+    Asscoiate each state and its child transition a cost
+    Assumption: paralleltopes
+    """
+    if s==s.goal:
+        return 0
+    GLG=np.dot(state_considered.G.T,np.dot(L,state_considered.G))
+    theta=state_considered.successor[2]
+    u=state_considered.successor[1]
+    theta_Q_theta=np.dot(theta.T,np.dot(Q,theta))
+    v=vertices_cube(s.n)
+    J={}
+    for index in range(v.shape[0]):
+        p=v[index,:].reshape(s.n,1)
+        J[index]=0
+        for row in range(s.n):
+            for k in range(s.n):
+                J[index]+=np.asscalar(p[row]*p[k]*GLG[row,k]+p[row]*p[k]*theta_Q_theta[row,k])
+    return max(J.values())+np.asscalar(np.dot(state_considered.x.T,np.dot(L,state_considered.x))+np.dot(u.T,np.dot(Q,u))+gamma)                

@@ -17,7 +17,7 @@ import matplotlib.animation as animation
 from main.auxilary_methods import vertices_cube
 import numpy as np
 
-from main.ana_system import states_time_order
+from main.ana_system import states_time_order,states_cost_order
 
 def visualize_set_tube(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,tube_size=0.01):
     from matplotlib.collections import PatchCollection
@@ -42,9 +42,34 @@ def visualize_set_tube(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,tube_size=0.
     ax1.set_xlabel('Height')
     ax1.set_ylabel('Velocity')
     plt.show()
+    
+def visualize_set_tube_simulation(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
+    ax1 = plt.subplot(111)
+    plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(ylabel)
+    ax1.set_xlim([xmin,xmax])
+    ax1.set_ylim([ymin,ymax])
+    vertices_0=np.array([[1,-1,-1,1],[1,1,-1,-1]])
+    # Trajectories
+    p_list=[]
+    for state in s.X:
+#        vertices=vertices_cube(state.G.shape[1]).T
+        v=np.dot(state.G_eps,vertices_0)
+        p_list.append(patches.Polygon(v.T+state.x.T, True))
+    p=PatchCollection(p_list,color=(0.4,0.4,0.4))
+    ax1.add_collection(p)
+    ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
+    trajectory=np.array(s.traj)
+    ax1.plot(trajectory[:,0,:],trajectory[:,1,:],'r',linewidth=0.5)
+    ax1.plot(trajectory[:,0,:],trajectory[:,1,:],'ro')
+    ax1.set_xlabel('Height',fontsize=24)
+    ax1.set_ylabel('Velocity',fontsize=24)
+    plt.show()
+    
 
 
-def visualize_X_eps(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
+def visualize_X_eps_time(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
     ax1 = plt.subplot(111)
     plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
     ax1.set_xlabel(xlabel)
@@ -61,6 +86,29 @@ def visualize_X_eps(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',ti
         p_list.append(patches.Polygon(v.T+state.x.T, True))
     max_T=max([state.time_to_go for state in STATES])
     p=PatchCollection(p_list,color=[(state.time_to_go/max_T,1-state.time_to_go/max_T,0) for state in STATES[::-1]])
+    ax1.add_collection(p)
+    ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
+    ax1.set_title(title)
+    plt.show()
+    return plt
+
+def visualize_X_eps_cost(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
+    ax1 = plt.subplot(111)
+    plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(ylabel)
+    ax1.set_xlim([xmin,xmax])
+    ax1.set_ylim([ymin,ymax])
+    vertices_0=np.array([[1,-1,-1,1],[1,1,-1,-1]])
+    # Trajectories
+    p_list=[]
+    STATES=states_cost_order(s)
+    for state in STATES[::-1]:
+#        vertices=vertices_cube(state.G.shape[1]).T
+        v=np.dot(state.G_eps,vertices_0)
+        p_list.append(patches.Polygon(v.T+state.x.T, True))
+    max_J=max([state.cost_to_go for state in STATES])
+    p=PatchCollection(p_list,color=[(state.cost_to_go/max_J,1-state.cost_to_go/max_J,0) for state in STATES[::-1]])
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
     ax1.set_title(title)
@@ -88,8 +136,8 @@ def Minkowski_hull(p1,p2):
 def visualize_subset_tree(s,iterations,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2'):
     ax1 = plt.subplot(111)
     plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel)
+    ax1.set_xlabel(xlabel,fontsize=24)
+    ax1.set_ylabel(ylabel,fontsize=24)
     ax1.legend(str(iterations)+"iterations")
     ax1.set_xlim([xmin,xmax])
     ax1.set_ylim([ymin,ymax])
@@ -103,8 +151,7 @@ def visualize_subset_tree(s,iterations,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1
     p=PatchCollection(p_list,color=(0.3,0.3,0.3))
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
-    ax1.set_title(str(iterations)+" iterations,  "+str(s.tree_size[iterations])+" polytopes")
+    ax1.set_title(str(iterations)+" iterations,  "+str(s.tree_size[iterations])+" polytopes",fontsize=24)
+    ax1.plot([0,0,0],[-8,0,8],color=(0,0,0),linewidth=1)
     plt.show()
     return plt
-    
-    

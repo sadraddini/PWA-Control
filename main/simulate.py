@@ -13,10 +13,15 @@ from main.controller import control_vanilla
 
 def simulate_vanilla(s,x):
     t=0
+    s.traj=[]
+    s.control_traj=[]
     while t<100:
+        t+=1
+        s.traj.append(x)
         print("state:",x.T)
         u=control_vanilla(s,x)
-        if u==False:
+        if u=="END":
+            print("END Control")
             return
         print("control:",u.T)
         x=evolve(s,x,u)

@@ -12,11 +12,12 @@ from main.trajectory import polytope_trajectory,make_state_trajectory_state_end
 from main.auxilary_methods import sample
 from main.tree_locator import array_tree,inside_tree,sorted_distance_states,all_vertices_out_of_tree
 from main.simulate import simulate_0
+from main.ana_system import cost_state
 
 
 def intitialize_tree(s,T=20,x0=np.array([0,0]).reshape(2,1),alpha_start=0):
     goal=s.goal
-    (x,u,G,theta,z,flag)=polytope_trajectory(s,x0,goal,T,alpha_start)
+    (x,u,G,theta,z,flag)=polytope_trajectory(s,x0,goal,T,alpha_start,coin=0.5)
     if flag==True:
         make_state_trajectory_state_end(s,x,u,z,G,theta,T,goal)
         s.X.append(s.goal)
@@ -56,3 +57,23 @@ def rewiring(s,x):
 
 def tree_construct(s,goal,max_iterations):
     pass
+
+def tree_value_function(s):
+    """
+        Solve a linear program
+    """
+    model=Model("cost_to_go")
+    V={}
+    for state_considered in s.X:
+        V[state_considered]=model.addVar(lb=0,obj=1)
+    model.update()
+    for state_considered in s.X:
+        if state_considered==s.goal:
+            model.addConstr(V[state_considered]==0)
+        else:
+            model.addConstr(V[state_considered]>=V[state_considered.successor[0]]+cost_state(s,state_considered,s.Q,s.R,s.g))
+    model.optimize()
+    for state_considered in s.X:
+        state_considered.cost_to_go=V[state_considered].X
+        
+        

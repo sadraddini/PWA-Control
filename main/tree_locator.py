@@ -39,10 +39,19 @@ def sorted_distance_states(s,x):
     return [s.X[i] for i in indices]
 
 def zero_distance_states(s,x):
-    return [s.X[index] for index in range(len(s.X)) if d_tree(s,x)[index][0]<10**-8]
-    
-def tree_locator(s,x):
-    pass
+    return [s.X[index] for index in range(len(s.X)) if d_tree(s,x)[index][0]<10**-6]
+
+def tree_locator_time(s,x):
+    STATES=zero_distance_states(s,x)
+    if STATES==[]:
+        return sorted_distance_states(s,x)[-1]
+    T=1000
+    for X in STATES:
+        if X.time_to_go<T:
+            T=X.time_to_go
+            X_best=X
+    return X_best
+            
 
 def inside_tree(s,x):
     if zero_distance_states(s,x)==[]:
@@ -57,6 +66,13 @@ def all_vertices_out_of_tree(s,x,G):
         if (s,x+np.dot(G,s.vertices[i,:].T))==True:
             return False
     return True
+
+def inside_tree_iterations(s,x,it):
+    zero_distance_states=[s.X[index] for index in range(s.tree_size[it]) if d_tree(s,x)[index][0]<10**-6]
+    if zero_distance_states==[]:
+        return False
+    else:
+        return True
     
 """
 OLD MATERIAL: Going to be removed
