@@ -10,7 +10,7 @@ In this paper, we introduce a method to obtain feedback control policies and a c
 The idea is conceptually similar to LQR-trees \cite{tedrake2010lqr}, which consists of 3 steps: (1) open-loop trajectory optimization, (2) feedback control for computation of "funnels" of states around trajectories, and (3) repeating (1) and (2) in a way that the funnels are grown backward from the goal in a tree fashion and fill the state-space as much as possible. We show PWA dynamics can be exploited to combine step (1) and (2) into a single step that is tackled using mixed-integer convex programming, which makes the method more suitable for dealing with hard constraints. Illustrative examples on contact-based dynamics are presented. 
 
 ### Paper
-The full version (corrections made) is available [here][https://github.com/sadraddini/PWA-Control/blob/master/paper.pdf]
+The full version (corrections made) is available [here](https://github.com/sadraddini/PWA-Control/blob/master/paper.pdf)
 
 ### Dependencies:
 * Python 3.6 or later
