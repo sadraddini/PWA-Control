@@ -93,10 +93,10 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
     model.update()
     for row in range(s.n):
         for column in range(s.n):
-            if coin<0.33:
+            if coin<0.1:
                 if row<column:
                     model.addConstr(G[0][row,column]==0)
-            elif coin>0.67:
+            elif coin>0.9:
                 if row>column:
                     model.addConstr(G[0][row,column]==0)                
             if row==column:

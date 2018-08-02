@@ -10,7 +10,6 @@ from main.tree_locator import tree_locator_time
 
 def control_vanilla(s,x):
     x_state=tree_locator_time(s,x)
-    print("tree node is",x_state, "successor:",x_state.successor)
     if x_state==s.goal:
         print("*"*40,"YUHOOO! REACHED THE GOAL","*"*40)
         return "END"

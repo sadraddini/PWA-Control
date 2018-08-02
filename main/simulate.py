@@ -28,8 +28,7 @@ def simulate_vanilla(s,x):
     
 def evolve(s,x,u):
     i=find_mode(s,x)
-#    print("x=",x.T,"u=",u,"i=",i,"\n")
-    return np.dot(s.A[i],x)+np.dot(s.B[i],u)+s.c[i]#+(np.random.random((2,1))-0.5)*0.00001
+    return np.dot(s.A[i],x)+np.dot(s.B[i],u)+s.c[i]
 
 def simulate_0(s,x,T):
     for t in range(T):

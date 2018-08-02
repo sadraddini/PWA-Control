@@ -8,7 +8,7 @@ Created on Mon Jul  2 15:36:54 2018
 # External imports
 import numpy as np
 import sys
-sys.path.append('..')
+sys.path.append('../..')
 
 # Internal imports
 from main.ana_system import system,state
