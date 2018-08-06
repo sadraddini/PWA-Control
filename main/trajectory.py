@@ -14,6 +14,9 @@ from gurobipy import Model,GRB,LinExpr,QuadExpr
 from random import choice as rchoice
 from random import random
 
+import sys
+sys.path.append('..')
+
 # Secondary imports
 from main.auxilary_methods import find_mode,valuation,mode_sequence
 from main.ana_system import state,cost_state
@@ -52,7 +55,7 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
     model.update()
     # Trajectory Constraints:
     # Mode i:
-    bigM=100
+    bigM=1
     for i in s.modes:
         for t in range(T):
             for row in range(s.n):

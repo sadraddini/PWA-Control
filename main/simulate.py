@@ -6,10 +6,11 @@ Created on Thu Jul 12 11:09:51 2018
 @author: sadra
 """
 
+# Primary imports
 import numpy as np
 
 from main.auxilary_methods import find_mode,inside_X
-from main.controller import control_vanilla
+from main.controller import control_vanilla,control_convex
 
 def simulate_vanilla(s,x):
     t=0
@@ -20,6 +21,21 @@ def simulate_vanilla(s,x):
         s.traj.append(x)
         print("state:",x.T)
         u=control_vanilla(s,x)
+        if u=="END":
+            print("END Control")
+            return
+        print("control:",u.T)
+        x=evolve(s,x,u)
+        
+def simulate_convex(s,x):
+    t=0
+    s.traj=[]
+    s.control_traj=[]
+    while t<100:
+        t+=1
+        s.traj.append(x)
+        print("state:",x.T)
+        u=control_convex(s,x)
         if u=="END":
             print("END Control")
             return

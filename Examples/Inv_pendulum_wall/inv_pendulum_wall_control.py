@@ -19,7 +19,7 @@ from main.trajectory import state_trajectory
 from main.tree_locator import inside_tree,array_tree
 from main.auxilary_methods import sample
 from main.visualization import visualize_subset_tree,visualize_set_tube_simulation
-from main.simulate import simulate_vanilla
+from main.simulate import simulate_vanilla,simulate_convex
 
 array_tree(s)
 

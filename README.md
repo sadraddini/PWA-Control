@@ -1,5 +1,3 @@
-## (Under Construction!)
-
 # Random trees of polytopes for approximate optimal control of piecewise affine systems
 ## Sadra Sadraddini and Russ Tedrake
 ### MIT CSAIL, July 2018
@@ -23,8 +21,20 @@ The full version (corrections made) is available [here](https://github.com/sadra
     * Inverted pendulum with Wall, Example 1 in this [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
     * 4-Mode System from Example 2 in in this [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
 
-### How to use examples:
-(under development)
 
-### How to use guide:
-(under development)
+### Usage Guide:
+The user may use the following to formulate a PWA control problem and obtain a controller. The following guide is general picture, and it does not include minor details. The reader is encouraged to check the examples. 
+
+* Step I: define the PWA system. Specify the modes, and the numerics for affine dynamics in each mode, and the polytope defining it. 
+So far, we have only considered cases where PWA cells are constructed in state space, not joint state-control space. Also, the user is asked to provide the bounding box of each PWA cell, which is used for sampling.
+
+* Step II: Define a goal polytope. The problem is designing a control policy to get into the goal. The user may also define a cost function. The default is time optimality. 
+
+* Step III: run the oolytopes tree algorithm. The tree grows incrementally, and it may take a long time such that polytopes cover a large of portion of the state space.
+
+* Step IV: two controllers are obtained:
+    * The first one is simpler. It is based on matrix multiplications and is essentially an affine feedback in each polytope. It does not work properly for states out of the tree. 
+    * The second one solves a small convex program to keep the system within the tree, or close to the tree, while decreasing the value function. This controller can handle states outside of the tree, but does not provide any guarantee that the state gets into the goal- unless the state falls into the tree.
+
+### Visualization
+Current version only supports visualization for 2D problems. See examples.  
