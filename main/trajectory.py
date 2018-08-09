@@ -14,6 +14,8 @@ from gurobipy import Model,GRB,LinExpr,QuadExpr
 from random import choice as rchoice
 from random import random
 
+from time import time
+
 import sys
 sys.path.append('..')
 
@@ -22,6 +24,91 @@ from main.auxilary_methods import find_mode,valuation,mode_sequence
 from main.ana_system import state,cost_state
 
 def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
+    (model,x,u,G,theta,z)=s.library[T]
+    n_vars=len(model.getVars())
+    n_constraints=len(model.getConstrs())
+    new_var_count=0
+    new_constraint_count=0
+    J_area=LinExpr()
+    d_min=model.addVar(lb=0.0001,name="new var %d"%new_var_count)
+    new_var_count+=1
+    beta=10**2 # Weight of infinity norm
+    model.update()
+    print("coin=",coin)
+    for row in range(s.n):
+        for column in range(s.n):
+            if coin<0.1:
+                if row<column:
+                    model.addConstr(G[0][row,column]==0,name="constraint %d"%new_constraint_count)
+                    new_constraint_count+=1
+            elif coin>0.9:
+                if row>column:
+                    model.addConstr(G[0][row,column]==0,name="constraint %d"%new_constraint_count)
+                    new_constraint_count+=1                
+            if row==column:
+                model.addConstr(G[0][row,column]>=d_min/s.weight[row],name="constraint %d"%new_constraint_count)
+                new_constraint_count+=1
+    J_area.add(-d_min*T*s.n*beta)
+    for row in range(s.n):
+        for t in range(T):
+            J_area.add(-G[t][row,row]*s.weight[row])
+    # Terminal Constraint
+    terminal_constraint(s,x,G,T,model,state_end)
+    # Starting Point
+    i_start=find_mode(s,x0)
+    for i in s.modes:
+        model.addConstr(z[0,i]==int(i==i_start))
+    model.setParam('OutputFlag',False)
+    if alpha_start==-1:
+        x_delta={}
+        for row in range(s.n):
+            x_delta[row]=model.addVar(lb=-eps/s.weight[row],ub=eps/s.weight[row])
+        model.update()
+#        print("only area!")
+        for row in range(s.n):
+            model.addConstr(x[0][row,0]==x0[row,0]+x_delta[row])
+        model.setObjective(J_area)
+        model.optimize()
+    else:          
+        model.setObjective(J_area)
+        model.optimize()
+    if model.Status!=2 and model.Status!=11:
+        flag=False
+#        print("*"*20,"Flag is False and Status is",model.Status)
+        print("*"*20,"False flag",model.Status)
+        final=(x,u,G,theta,z,flag)
+    else:
+        flag=True
+#        print("*"*20,"Flag is True and Status is",model.Status)
+        x_n=valuation(x)
+        u_n=valuation(u)
+        G_n=valuation(G)
+        theta_n=valuation(theta)
+        z_n=mode_sequence(s,z)
+        if abs(np.linalg.det(G_n[0]))<10**-5:
+            flag=False
+        final=(x_n,u_n,G_n,theta_n,z_n,flag)
+    print("starting removal process")
+    print("start=",n_vars,"variables and ",n_constraints," constraints")
+    new_n_vars=len(model.getVars())
+    new_n_constraints=len(model.getConstrs())
+    print("new:",new_n_vars,"variables and ",new_n_constraints," constraints")    
+    time_start=time()
+    for i in range(new_n_vars-n_vars):
+        model.remove(model.getVars()[-i-1])
+    model.update()
+    for i in range(new_n_constraints-n_constraints):
+        model.remove(model.getConstrs()[-i-1]) 
+    model.update()
+    n_vars=len(model.getVars())
+    n_constraints=len(model.getConstrs())
+    print("final:",n_vars,"variables and ",n_constraints," constraints")    
+    print("end of removal in ",time()-time_start," seconds")
+    return final
+    
+    
+
+def polytope_trajectory_old(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
     model=Model("trajectory of polytopes")
     x={}
     u={}

@@ -18,12 +18,13 @@ sys.path.append('..')
 # Secondary imports
 from main.auxilary_methods import find_mode,valuation,mode_sequence
 from main.ana_system import state,cost_state
+from main.trajectory import subset_MILP
 
-def trajectroy_model(s,T):
-    model=Model("trajectory to a list of polytopes using big-M method")
+def trajectory_model(s,T):
+    model=Model("polytopic trajectory of PWA systems")
     x={}
     u={}
-    theta={}subset_MILP
+    theta={}
     z={}
     G_bound=100
     # Mode 1:
@@ -70,7 +71,7 @@ def trajectroy_model(s,T):
             for column in range(s.n):
                 theta[t][row,column]=model.addVar(lb=-G_bound,ub=G_bound)   
     for t in range(T+1):
-        for i in s.modes:subset_MILP
+        for i in s.modes:
             z[t,i]=model.addVar(vtype=GRB.BINARY)
     x[T]=np.empty((s.n,1),dtype='object') # Final state in Mode i
     for row in range(s.n):
@@ -84,7 +85,7 @@ def trajectroy_model(s,T):
     model.update()
     # Trajectory Constraints:
     # Mode i:
-    bigM=100
+    bigM=10
     for i in s.modes:
         for t in range(T):
             for row in range(s.n):
@@ -118,25 +119,6 @@ def trajectroy_model(s,T):
         for i in s.modes:
             subset_MILP(model,G[t],s.Pi,s.H[i],s.h[i],x[t],z[t,i])
             subset_MILP(model,theta[t],s.Pi,s.F[i],s.f[i],u[t],z[t,i])   
-    # set objective
-    J_area=LinExpr()
-    d_min=model.addVar(lb=0.0001)
-    beta=10**2 # Weight of infinity norm
-    model.update()
-    for row in range(s.n):
-        for column in range(s.n):
-            if coin<0.1:
-                if row<column:
-                    model.addConstr(G[0][row,column]==0)
-            elif coin>0.9:
-                if row>column:
-                    model.addConstr(G[0][row,column]==0)                
-            if row==column:
-                model.addConstr(G[0][row,column]>=d_min/s.weight[row])
-    J_area.add(-d_min*T*s.n*beta)
-    for row in range(s.n):
-        for t in range(T):
-            J_area.add(-G[t][row,row]*s.weight[row])
     # Terminal Constraint 
     bigM=100
     for i in s.modes:
@@ -172,59 +154,4 @@ def trajectroy_model(s,T):
         for i in s.modes:
             subset_MILP(model,G[t],s.Pi,s.H[i],s.h[i],x[t],z[t,i])
             subset_MILP(model,theta[t],s.Pi,s.F[i],s.f[i],u[t],z[t,i])   
-    # set objective
-    J_area=LinExpr()
-    d_min=model.addVar(lb=0.0001)
-    beta=10**2 # Weight of infinity norm
-    model.update()
-    for row in range(s.n):
-        for column in range(s.n):
-            if coin<0.1:
-                if row<column:
-                    model.addConstr(G[0][row,column]==0)
-            elif coin>0.9:
-                if row>column:
-                    model.addConstr(G[0][row,column]==0)                
-            if row==column:
-                model.addConstr(G[0][row,column]>=d_min/s.weight[row])
-    J_area.add(-d_min*T*s.n*beta)
-    for row in range(s.n):
-        for t in range(T):
-            J_area.add(-G[t][row,row]*s.weight[row])
-    # Terminal Constraint
-    terminal_constraint(s,x,G,T,model,state_end)
-    # Starting Point
-    i_start=find_mode(s,x0)
-    for i in s.modes:
-        model.addConstr(z[0,i]==int(i==i_start))
-    model.setParam('OutputFlag',False)
-    if alpha_start==-1:
-        x_delta={}
-        for row in range(s.n):
-            x_delta[row]=model.addVar(lb=-eps/s.weight[row],ub=eps/s.weight[row])
-        model.update()
-#        print("only area!")
-        for row in range(s.n):
-            model.addConstr(x[0][row,0]==x0[row,0]+x_delta[row])
-        model.setObjective(J_area)
-        model.optimize()
-    else:          
-        model.setObjective(J_area)
-        model.optimize()
-    if model.Status!=2 and model.Status!=11:
-        flag=False
-#        print("*"*20,"Flag is False and Status is",model.Status)
-        print("*"*20,"False flag",model.Status)
-        return (x,u,G,theta,z,flag)
-    else:
-        flag=True
-#        print("*"*20,"Flag is True and Status is",model.Status)
-        x_n=valuation(x)
-        u_n=valuation(u)
-        G_n=valuation(G)
-        theta_n=valuation(theta)
-        z_n=mode_sequence(s,z)
-        if abs(np.linalg.det(G_n[0]))<10**-5:
-            flag=False
-        return (x_n,u_n,G_n,theta_n,z_n,flag)   
-    
+    s.library[T]=(model,x,u,G,theta,z)

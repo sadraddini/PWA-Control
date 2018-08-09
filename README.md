@@ -20,17 +20,17 @@ The full version (corrections made) is available [here](https://github.com/sadra
     * The Bouncing ball 
     * Inverted pendulum with Wall, Example 1 in this [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
     * 4-Mode System from Example 2 in in this [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
+* Convex_Hull (*new*): disjuctive programming for faster tree extention 
 
-
-### Usage Guide:
-The user may use the following to formulate a PWA control problem and obtain a controller. The following guide is general picture, and it does not include minor details. The reader is encouraged to check the examples. 
+### How to use guide:
+The user may use the following to formulate a PWA control problem and obtain a controller. The following guide is the general picture, and it does not include minor details. The reader is encouraged to check the examples. 
 
 * Step I: define the PWA system. Specify the modes, and the numerics for affine dynamics in each mode, and the polytope defining it. 
 So far, we have only considered cases where PWA cells are constructed in state space, not joint state-control space. Also, the user is asked to provide the bounding box of each PWA cell, which is used for sampling.
 
 * Step II: Define a goal polytope. The problem is designing a control policy to get into the goal. The user may also define a cost function. The default is time optimality. 
 
-* Step III: run the oolytopes tree algorithm. The tree grows incrementally, and it may take a long time such that polytopes cover a large of portion of the state space.
+* Step III: run the polytope tree algorithm. The tree grows incrementally, and it may take a long time such that polytopes cover a large of portion of the state space.
 
 * Step IV: two controllers are obtained:
     * The first one is simpler. It is based on matrix multiplications and is essentially an affine feedback in each polytope. It does not work properly for states out of the tree. 
@@ -38,3 +38,8 @@ So far, we have only considered cases where PWA cells are constructed in state s
 
 ### Visualization
 Current version only supports visualization for 2D problems. See examples.  
+
+### Contact us
+If you have any questions regarding this work, or you are willing to contribute, please contact [Sadra Sadraddini](sadra@mit.edu) 
+
+Last updated on Aug 9, 2018. 

@@ -39,7 +39,7 @@ def control_convex(s,x):
         p[row]=model.addVar(lb=-1,ub=1)
         delta[row]=model.addVar(lb=-100,ub=100)
     for row in range(s.m):
-        u[row]=model.addVar(lb=-3,ub=3)
+        u[row]=model.addVar(lb=-4,ub=4)
     model.update()
     i=find_mode(s,x)
     Ax=np.dot(s.A[i],x)
@@ -53,7 +53,7 @@ def control_convex(s,x):
         model.addConstr(Ax[row,0]+Bu+s.c[i][row,0]==state_target.x[row,0]+delta[row]+Gp)
     J=QuadExpr()
     for row in range(s.n):
-        J.add(delta[row]*delta[row]/s.weight[row]+p[row]*p[row]*0.01)
+        J.add(delta[row]*delta[row]/s.weight[row]+p[row]*p[row]*0.00)
     model.setObjective(J)
     model.optimize()
     return np.array(u[0].X).reshape(1,1)
