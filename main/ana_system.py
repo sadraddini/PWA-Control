@@ -34,13 +34,14 @@ class state:
         self.mode=mode
         self.ID=ID
         self.t=t
-        self.character=character # 1 for in, 2 for out, 0 for string, -1 for self-loop, 3 for weaving, 4 for backward Funnel, 6: free end funnel, 7: state_end funnel
+        self.character=character # 0 for goal, 1 for ordinary paralleltope, 2 for 
         v=vertices_cube(G.shape[1])
         self.vertices=(np.dot(G,v.T)).T
         self.backward_zero=-1 # 0 for not computed, -1 for computed but not useful, 1 some large regions leading it have been computed!
         self.cost_to_go=0
         self.time_to_go=0
         self.cost_to_child=0
+        self.parent=[]
             
     def __repr__(self):
         return self.name
@@ -75,6 +76,8 @@ class system:
         # cost functions
         self.tree_iterations=0
         self.tree_size={}
+        # ID
+        self.ID=0
         
     def __repr__(self):
         return self.name+" with "+str(len(self.modes))+" modes"

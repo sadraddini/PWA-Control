@@ -24,6 +24,7 @@ from Convex_Hull.trajectory_disjunctive import polytopic_trajectory_to_set_of_po
 
 def intitialize_tree(s,T=20,x0=np.array([0,0]).reshape(2,1),alpha_start=0):
     goal=s.goal
+    s.goal.successor=(s.goal,"null","null")
     (x,u,G,theta,z,flag)=polytope_trajectory(s,x0,goal,T,alpha_start,coin=0.5)
     if flag==True:
         make_state_trajectory_state_end(s,x,u,z,G,theta,T,goal)

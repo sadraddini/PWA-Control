@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jul 18 12:11:15 2018
+Created on Tue Aug 14 14:32:13 2018
 
 @author: sadra
 """
-from inv_pendulum_wall import *
 
-import pickle
-s=pickle.load(open("inv_pendulum_wall.pkl","rb"))
-
+from inv_pendulum_two_walls import *
 
 ### Internal imports
 import sys
@@ -17,7 +14,6 @@ sys.path.append('../..')
 
 
 # Internal imports:
-from inv_pendulum_wall import *
 from main.visualization import visualize_set_tube,visualize_X_eps_time,visualize_X_eps_cost,visualize_subset_tree
 from main.tree import intitialize_tree,Random_Tree_of_Polytopes
 from main.tree_locator import tree_locator_time
@@ -25,7 +21,7 @@ from main.simulate import simulate_vanilla
 from main.gurobi_m_library import trajectory_model
 
 s.library={}
-Tmax=20
+Tmax=25
 for T in range(1,Tmax+1):
     print(T)
     trajectory_model(s,T)

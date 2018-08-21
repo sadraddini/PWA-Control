@@ -26,7 +26,7 @@ def trajectory_model(s,T):
     u={}
     theta={}
     z={}
-    G_bound=100
+    G_bound=10
     # Mode 1:
     for t in range(T):
         x[t]=np.empty((s.n,1),dtype='object') # n*1
@@ -57,7 +57,6 @@ def trajectory_model(s,T):
     u={}
     theta={}
     z={}
-    G_bound=100
     # Mode 1:
     for t in range(T):
         x[t]=np.empty((s.n,1),dtype='object') # n*1
@@ -120,7 +119,6 @@ def trajectory_model(s,T):
             subset_MILP(model,G[t],s.Pi,s.H[i],s.h[i],x[t],z[t,i])
             subset_MILP(model,theta[t],s.Pi,s.F[i],s.f[i],u[t],z[t,i])   
     # Terminal Constraint 
-    bigM=100
     for i in s.modes:
         for t in range(T):
             for row in range(s.n):
