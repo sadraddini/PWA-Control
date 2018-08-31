@@ -2,6 +2,8 @@
 ## Sadra Sadraddini and Russ Tedrake
 ### MIT CSAIL, July 2018
 
+![Bouncing Ball](https://github.com/sadraddini/PWA-Control/raw/master/Examples/Bouncing_ball/figures/ball_iterations.gif)
+
 ### Abstract
 Piecewise affine (PWA) systems are widely used to model highly nonlinear behaviors such as contact dynamics in robot locomotion and manipulation. Existing control techniques for PWA systems have computational drawbacks, both in offline design and online implementation. 
 In this paper, we introduce a method to obtain feedback control policies and a corresponding  set of admissible initial conditions for discrete-time PWA systems such that all the closed-loop trajectories reach a goal polytope, while a cost function is optimized. 
@@ -21,7 +23,7 @@ The full version (corrections made) is available [here](https://github.com/sadra
     * Inverted pendulum with wall, Example 1 in this [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
     * Inverted pendulum with two walls on each side
     * 4-Mode System from Example 2 in in this [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
-    * Hybrid stabilization of Planar Pushing (*under devlopment*)
+    * Hybrid stabilization of Planar Pushing (*under development*)
 * Convex_Hull (*new*): disjuctive programming for faster tree extention 
 
 ### How to use guide:
