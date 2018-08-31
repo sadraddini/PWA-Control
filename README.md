@@ -21,6 +21,7 @@ The full version (corrections made) is available [here](https://github.com/sadra
     * Inverted pendulum with wall, Example 1 in this [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
     * Inverted pendulum with two walls on each side
     * 4-Mode System from Example 2 in in this [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
+    * Hybrid stabilization of Planar Pushing (*under devlopment*)
 * Convex_Hull (*new*): disjuctive programming for faster tree extention 
 
 ### How to use guide:
@@ -38,9 +39,9 @@ So far, we have only considered cases where PWA cells are constructed in state s
     * The second controller solves a small convex program to keep the system within the tree, or close to the tree, while decreasing the value function. This controller can handle states outside of the tree, but does not provide any guarantee that the state gets into the goal- unless the state falls into the tree.
 
 ### Visualization
-Current version only supports visualization for 2D problems. See examples.  
+Current version only supports visualization for 2D problems. See examples.
 
 ### Contact us
 If you have any questions regarding this work, or you are willing to contribute, please contact [Sadra Sadraddini](sadra@mit.edu) 
 
-Last updated on Aug 21, 2018. 
+Last updated on Aug 31, 2018. 

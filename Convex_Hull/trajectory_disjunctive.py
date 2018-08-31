@@ -115,7 +115,7 @@ def terminal_constraint_set_bigM(s,x,G,model,list_of_polytopes):
     (n_p,n)=s.Pi.shape
     (n_h,n)=(2*s.n,s.n)
     z_pol={}
-    bigM=200
+    bigM=2
     for polytope in list_of_polytopes:
         Lambda[polytope]=np.empty((n_h,n_p),dtype='object')
         for row in range(n_h):
@@ -126,11 +126,6 @@ def terminal_constraint_set_bigM(s,x,G,model,list_of_polytopes):
     z_sum=LinExpr()
     for polytope in list_of_polytopes:
         z_sum.add(z_pol[polytope])
-        H=np.dot(s.Pi,polytope.G_eps_inv)
-        h=np.ones((s.Pi.shape[0],1))+np.dot(H,polytope.x)
-        factorize=np.amax(abs(H),1).reshape(s.Pi.shape[0],1)
-        H=np.divide(H,factorize)
-        h=np.divide(h,factorize)
         for row in range(n_h):
             for column in range(n_g):
                 s_left=LinExpr()
@@ -138,7 +133,7 @@ def terminal_constraint_set_bigM(s,x,G,model,list_of_polytopes):
                 for k in range(n_p):
                     s_left.add(Lambda[polytope][row,k]*s.Pi[k,column])
                 for k in range(n):
-                    s_right.add(H[row,k]*G[k,column])
+                    s_right.add(polytope.polytope.H[row,k]*G[k,column])
                 model.addConstr(s_left==s_right)
         # Lambda * 1 <= H*
         for row in range(n_h):
@@ -147,8 +142,8 @@ def terminal_constraint_set_bigM(s,x,G,model,list_of_polytopes):
             for k in range(n_p):
                 s_left.add(Lambda[polytope][row,k])
             for k in range(n):
-                s_right.add(H[row,k]*x[k,0])
-            model.addConstr(s_left<=h[row,0]-s_right+bigM-bigM*z_pol[polytope])
+                s_right.add(polytope.polytope.H[row,k]*x[k,0])
+            model.addConstr(s_left<=polytope.polytope.h[row,0]-s_right+bigM-bigM*z_pol[polytope])
     model.addConstr(z_sum==1)
     return z_pol
 
@@ -192,11 +187,6 @@ def terminal_constraint_convex_hull(s,x,G,model,list_of_polytopes):
             x_sum[row,0].add(x_pol[polytope][row,0])
             for column in range(n_g):
                 G_sum[row,column].add(G_pol[polytope][row,column])        
-        H=np.dot(s.Pi,polytope.G_eps_inv)
-        h=np.ones((s.Pi.shape[0],1))+np.dot(H,polytope.x)
-        factorize=np.amax(abs(H),1).reshape(s.Pi.shape[0],1)
-        H=np.divide(H,factorize)
-        h=np.divide(h,factorize)
         for row in range(n_h):
             for column in range(n_g):
                 s_left=LinExpr()
@@ -204,7 +194,7 @@ def terminal_constraint_convex_hull(s,x,G,model,list_of_polytopes):
                 for k in range(n_p):
                     s_left.add(Lambda[polytope][row,k]*s.Pi[k,column])
                 for k in range(n):
-                    s_right.add(H[row,k]*G_pol[polytope][k,column])
+                    s_right.add(polytope.polytope.H[row,k]*G_pol[polytope][k,column])
                 model.addConstr(s_left==s_right)
         # Lambda * 1 <= H*
         for row in range(n_h):
@@ -213,8 +203,8 @@ def terminal_constraint_convex_hull(s,x,G,model,list_of_polytopes):
             for k in range(n_p):
                 s_left.add(Lambda[polytope][row,k])
             for k in range(n):
-                s_right.add(H[row,k]*x_pol[polytope][k,0])
-            model.addConstr(s_left<=h[row,0]*z_pol[polytope]-s_right)
+                s_right.add(polytope.polytope.H[row,k]*x_pol[polytope][k,0])
+            model.addConstr(s_left<=polytope.polytope.h[row,0]*z_pol[polytope]-s_right)
     model.addConstr(z_sum==1)
     for row in range(n):
         model.addConstr(x_sum[row,0]==x[row,0])

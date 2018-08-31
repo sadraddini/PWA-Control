@@ -20,6 +20,8 @@ from main.tree_locator import tree_locator_time
 from main.simulate import simulate_vanilla
 from main.gurobi_m_library import trajectory_model
 
+from Convex_Hull.visualization_hulls import visualize_X_time_hull_eps
+
 s.library={}
 Tmax=25
 for T in range(1,Tmax+1):
@@ -32,6 +34,7 @@ visualize_set_tube(s.X,-0.12,0.12,-1,1,tube_size=0.001)
 Random_Tree_of_Polytopes(s,T_max=Tmax,eps_max=0)
     
 visualize_X_eps_time(s,-0.12,0.12,-1,1,"angle","angular velocity","steps-to-go")
+visualize_X_time_hull_eps(s,-0.12,0.12,-1,1,"angle","angular velocity","steps-to-go")
 
 def animate(d):
     return visualize_subset_tree(s,d,-0.12,0.12,-1,1,"angle","angular velocity")

@@ -9,6 +9,8 @@ from numpy.linalg import svd
 import numpy as np
 from gurobipy import Model,GRB,LinExpr
 
+from main.auxilary_methods import PI
+
 
 class polytope:
     """
@@ -21,16 +23,16 @@ class polytope:
     def __repr__(self):
         return "polytope in R^%d"%self.H.shape[1]
 
-def state_to_polytope(s,state_X,tol=10**-8):
+def state_to_polytope(state_X,tol=10**-8):
     """
     Input:
         a state in the system that is a paralleltope
     Output:
         polytope for the system
     """                  
-    return TQ_to_polytope(s,state_X.G,state_X.x,tol)
+    return TQ_to_polytope(state_X.G,state_X.x,tol)
     
-def TQ_to_polytope(s,T,d,tol=10**-8):
+def TQ_to_polytope(T,d,tol=10**-8):
     """
     Input:
         s: system
@@ -46,8 +48,9 @@ def TQ_to_polytope(s,T,d,tol=10**-8):
     sigma_plus=np.zeros(n)
     sigma_plus[0:rank]=1/sigma_reduced
     T_pinv=np.dot(v.T,np.dot(np.diag(sigma_plus),u.T))
-    H=np.dot(s.Pi,T_pinv)
-    h=np.ones((s.Pi.shape[0],1))+np.dot(H,d)
+    Pi=PI(n)
+    H=np.dot(Pi,T_pinv)
+    h=np.ones((Pi.shape[0],1))+np.dot(H,d)
     H_other=u[:,rank:n].T
     h_other=np.dot(u[:,rank:n].T,d)
     H=np.vstack((H,H_other,-H_other))

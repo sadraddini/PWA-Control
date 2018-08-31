@@ -64,7 +64,7 @@ def extend_RRT_MILP(s,T,eps=0.1,K=100):
         # using list comprehension
         chunck_list = [STATES[i * K:(i + 1) * K] for i in range((len(STATES) + K - 1) // K )] 
         for list_of_states in chunck_list:
-            (x,u,G,theta,z,flag,state_end)=polytopic_trajectory_to_set_of_polytopes(s,x_sample,T,list_of_states,eps,method="bigM")
+            (x,u,G,theta,z,flag,state_end)=polytopic_trajectory_to_set_of_polytopes(s,x_sample,T,list_of_states,eps,method="chull")
             if flag==True:
                 if all_vertices_out_of_tree(s,x[0],G[0])==True:
                     make_state_trajectory_state_end(s,x,u,z,G,theta,T,state_end)

@@ -64,5 +64,6 @@ def inside_X(s,x,eps=10**-9):
         if np.amin(s.h[mode]-np.dot(s.H[mode],x))>=-eps:
             return True
     return False
-        
-            
+
+def PI(n):
+    return np.vstack((np.eye(n),-np.eye(n)))        

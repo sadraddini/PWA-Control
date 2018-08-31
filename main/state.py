@@ -10,6 +10,11 @@ Created on Fri Aug 24 18:34:17 2018
 import sys
 sys.path.append('../..')
 
+import numpy as np
+
+from main.auxilary_methods import vertices_cube
+from main.polytope import state_to_polytope
+
 
 class state:
     def __init__(self,x,G,mode,ID,t,character,epsilon=10**-8):
@@ -33,11 +38,17 @@ class state:
         self.character=character # 0 for goal, 1 for ordinary paralleltope, 2 for 
         v=vertices_cube(G.shape[1])
         self.vertices=(np.dot(G,v.T)).T
+        self.vertices_eps=(np.dot(self.G_eps,v.T)).T
         self.backward_zero=-1 # 0 for not computed, -1 for computed but not useful, 1 some large regions leading it have been computed!
         self.cost_to_go=0
         self.time_to_go=0
         self.cost_to_child=0
         self.parent=[]
+        self.polytope=state_to_polytope(self)
             
     def __repr__(self):
         return self.name
+
+class timed_state:
+    def __init__(self,list_of_states):
+        self.list_of_states=list_of_states
