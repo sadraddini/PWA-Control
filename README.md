@@ -15,15 +15,15 @@ The full version (corrections made) is available [here](https://github.com/sadra
 
 ### Dependencies:
 * Python 2.7 or later (Python 3.6 or later *recommended*)
-* Gurobi Version 7.0 or later
+* [Gurobi](http://www.gurobi.com/) Version 7.0 or later
 
 ### Folder descriptions
 * Main: source code of tools
 * Examples: 
     * The Bouncing ball 
-    * Inverted pendulum with wall, Example 1 in this [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
-    * Inverted pendulum with two walls on each side
-    * 4-Mode System from Example 2 in in this [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
+    * Inverted pendulum with wall, Example 1 in [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
+    * Inverted pendulum with two walls - one on each side
+    * 4-Mode system from Example 2 in [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
     * Hybrid stabilization of Planar Pushing (*under development*)
 * Convex_Hull (*new*): disjuctive programming for faster tree extention 
 
