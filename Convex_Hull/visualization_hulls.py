@@ -47,9 +47,9 @@ def visualize_X_time_hull_eps(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabe
     plt.show()
     return plt
 
-def visualize_X_hull_eps(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
+def visualize_X_hull_eps(s,list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
     ax1 = plt.subplot(111)
-    fig=plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
+    #fig=plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
     ax1.set_xlabel(xlabel)
     ax1.set_ylabel(ylabel)
     ax1.set_xlim([xmin,xmax])
@@ -61,5 +61,4 @@ def visualize_X_hull_eps(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
     ax1.set_title(title)
-    plt.show()
-    return fig
+    return plt
