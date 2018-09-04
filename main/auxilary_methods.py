@@ -20,17 +20,26 @@ def valuation(x):
     """
     Description: given a set of Gurobi variables, output a similar object with values
     Input:
-        x: dictionary, each val an numpy array, each entry a Gurobi variable
+        x: dictionary or a vector, each val an numpy array, each entry a Gurobi variable
         output: x_n: dictionary with the same key as, each val an numpy array, each entry a float 
     """
-    x_n={}
-    for key,val in x.items():
-        x_n[key]=np.ones(val.shape)
-        (n_r,n_c)=val.shape
-        for row in range(n_r):
-            for column in range(n_c):
-                x_n[key][row,column]=x[key][row,column].X   
-    return x_n
+    if type(x)==type(dict()):
+        x_n={}
+        for key,val in x.items():
+            x_n[key]=np.ones(val.shape)
+            (n_r,n_c)=val.shape
+            for row in range(n_r):
+                for column in range(n_c):
+                    x_n[key][row,column]=x[key][row,column].X   
+        return x_n
+    elif type(x)==type(np.array([])):
+        x_n=np.empty(x.shape)
+        for row in range(x.shape[0]):
+            for column in range(x.shape[1]):
+                x_n[row,column]=x[row,column].X
+        return x_n
+    else:
+        raise("x is neither a dictionary or a numpy array")
 
 def mode_sequence(s,z):
     seq={}

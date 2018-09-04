@@ -5,11 +5,17 @@ Created on Fri Aug 24 11:13:56 2018
 
 @author: sadra
 """
+
+import sys
+sys.path.append('..')
+
+
 from numpy.linalg import svd
 import numpy as np
-from gurobipy import Model,GRB,LinExpr
+from gurobipy import Model,GRB,LinExpr,QuadExpr
+from random import random as rand
 
-from main.auxilary_methods import PI
+from main.auxilary_methods import PI,valuation
 
 
 class polytope:
@@ -183,4 +189,55 @@ def nullspace(A, atol=1e-13, rtol=0):
     nnz = (s >= tol).sum()
     ns = vh[nnz:].conj().T
     return ns
-        
+
+def sample_from_polytope(polytope):
+    """
+        A random point in H,h
+    """
+    model=Model("Polytope Sampling")
+    n=polytope.H.shape[1]
+    alpha=np.random.random((n,1))-0.5
+    theta=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
+    model.update()
+    Hx_Anchor=np.dot(polytope.H,polytope.anchor)
+    H_alpha=np.dot(polytope.H,alpha)
+    for row in range(polytope.H.shape[0]):
+        model.addConstr(H_alpha[row,0]*theta+Hx_Anchor[row,0]<=polytope.h[row])
+    model.setObjective(theta,GRB.MINIMIZE)
+    model.setParam('OutputFlag',False)
+    model.optimize()
+    theta_min=theta.X
+    model.reset()
+    model.setObjective(theta,GRB.MAXIMIZE)
+    model.optimize()
+    theta_max=theta.X
+    c=rand()
+    print(theta_min,theta_max,c)
+    x_sample=(polytope.anchor+alpha*theta_min)*c+(polytope.anchor+alpha*theta_max)*(1-c)
+    polytope.anchor=x_sample
+    return x_sample
+
+def anchor_point(polytope):
+    """
+        A point in H,h
+    """
+    model=Model("Polytope Sampling")
+    n=polytope.H.shape[1]
+    x=np.empty((n,1),dtype="object")
+    rho=np.empty((polytope.H.shape[0],1),dtype="object")
+    for row in range(n):
+        x[row,0]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
+    for row in range(polytope.H.shape[0]):
+        rho[row,0]=model.addVar(lb=0,ub=GRB.INFINITY)
+    model.update()
+    J=QuadExpr(0)
+    for row in range(polytope.H.shape[0]):
+        a=LinExpr()
+        for column in range(polytope.H.shape[1]):
+            a.add(polytope.H[row,column]*x[column,0])
+        model.addConstr(a+rho[row,0]==polytope.h[row])
+        J.add(rho[row,0]*rho[row,0])
+    model.setParam('OutputFlag',False)
+    model.setObjective(J)
+    model.optimize()
+    return valuation(x)

@@ -8,24 +8,24 @@
 ### Abstract
 Piecewise affine (PWA) systems are widely used to model highly nonlinear behaviors such as contact dynamics in robot locomotion and manipulation. Existing control techniques for PWA systems have computational drawbacks, both in offline design and online implementation. 
 In this paper, we introduce a method to obtain feedback control policies and a corresponding  set of admissible initial conditions for discrete-time PWA systems such that all the closed-loop trajectories reach a goal polytope, while a cost function is optimized. 
-The idea is conceptually similar to LQR-trees Tedrake et. al. (2010), which consists of 3 steps: (1) open-loop trajectory optimization, (2) feedback control for computation of "funnels" of states around trajectories, and (3) repeating (1) and (2) in a way that the funnels are grown backward from the goal in a tree fashion and fill the state-space as much as possible. We show PWA dynamics can be exploited to combine step (1) and (2) into a single step that is tackled using mixed-integer convex programming, which makes the method more suitable for dealing with hard constraints. Illustrative examples on contact-based dynamics are presented. 
+The idea is conceptually similar to LQR-trees [Tedrake et. al. (2010)](https://groups.csail.mit.edu/robotics-center/public_papers/Tedrake10.pdf), which consists of 3 steps: (1) open-loop trajectory optimization, (2) feedback control for computation of "funnels" of states around trajectories, and (3) repeating (1) and (2) in a way that the funnels are grown backward from the goal in a tree fashion and fill the state-space as much as possible. We show PWA dynamics can be exploited to combine step (1) and (2) into a single step that is tackled using mixed-integer convex programming, which makes the method more suitable for dealing with hard constraints. Illustrative examples on contact-based dynamics are presented. 
 
 ### Paper
 The full version (corrections made) is available [here](https://github.com/sadraddini/PWA-Control/blob/master/paper.pdf)
 
 ### Dependencies:
-* Python 2.7 or later (Python 3.6 or later *recommended*)
+* Python 2.7 or later (*recommended*: Python 3.6 or later)
 * [Gurobi](http://www.gurobi.com/) Version 7.0 or later
 
 ### Folder descriptions
-* Main: source code of tools
+* Main: source code of methods
+* Convex_Hull (*new*): methods related to disjuctive programming for faster tree extention 
 * Examples: 
     * The Bouncing ball 
     * Inverted pendulum with wall, Example 1 in [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
     * Inverted pendulum with two walls - one on each side
     * 4-Mode system from Example 2 in [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
     * Hybrid stabilization of Planar Pushing (*under development*)
-* Convex_Hull (*new*): disjuctive programming for faster tree extention 
 
 ### How to use guide:
 The user may use the following to formulate a PWA control problem and obtain a controller. The following guide is the general picture, and it does not include minor details. The reader is encouraged to check the examples. 
@@ -42,7 +42,7 @@ So far, we have only considered cases where PWA cells are constructed in state s
     * The second controller solves a small convex program to keep the system within the tree, or close to the tree, while decreasing the value function. This controller can handle states outside of the tree, but does not provide any guarantee that the state gets into the goal- unless the state falls into the tree.
 
 ### Visualization
-Current version only supports visualization for 2D problems. See examples.
+Current version only supports visualization for 2D problems. See examples. 
 
 ### Contact us
 If you have any questions regarding this work, or you are willing to contribute, please contact [Sadra Sadraddini](sadra@mit.edu) 

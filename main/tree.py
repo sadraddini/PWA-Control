@@ -7,6 +7,7 @@ Created on Thu Jul 12 00:04:20 2018
 """
 import numpy as np
 from random import random,choice,randint
+from gurobipy import Model
 
 ### Internal imports
 import sys
@@ -18,20 +19,25 @@ from main.auxilary_methods import sample
 from main.tree_locator import array_tree,inside_tree,sorted_distance_states,all_vertices_out_of_tree
 from main.simulate import simulate_0
 from main.ana_system import cost_state
+from main.polytope import sample_from_polytope
 
 from Convex_Hull.trajectory_disjunctive import polytopic_trajectory_to_set_of_polytopes
 
 
-def intitialize_tree(s,T=20,x0=np.array([0,0]).reshape(2,1),alpha_start=0):
+def intitialize_tree(s,T=20,alpha_start=0):
     goal=s.goal
     s.goal.successor=(s.goal,"null","null")
+    x0=s.goal.x
     (x,u,G,theta,z,flag)=polytope_trajectory(s,x0,goal,T,alpha_start,coin=0.5)
     if flag==True:
+        print("Initilization Successfull!")
         make_state_trajectory_state_end(s,x,u,z,G,theta,T,goal)
         s.X.append(s.goal)
         array_tree(s)
         s.tree_iterations+=1
         s.tree_size[s.tree_iterations]=len(s.X)
+    else:
+        raise("Error! Initilization NOT successfull!")
 
 def extend_RRT(s,T,alpha_start=10**5,eps=0.1):
     i=choice(s.modes)
@@ -53,7 +59,8 @@ def extend_RRT(s,T,alpha_start=10**5,eps=0.1):
                 
 def extend_RRT_MILP(s,T,eps=0.1,K=100):
     i=choice(s.modes)
-    x_sample=sample(s.l[i],s.u[i])
+    #x_sample=sample(s.l[i],s.u[i])
+    x_sample=sample_from_mode(s,i)
     array_tree(s)
     if inside_tree(s,x_sample)==True:
         print("inside X_tree")
@@ -109,5 +116,25 @@ def tree_value_function(s):
     model.optimize()
     for state_considered in s.X:
         state_considered.cost_to_go=V[state_considered].X
+
+
+def sample_from_mode(s,mode):
+    """
+    This is rejection sampling, remove it at next commit
+    """
+    p=s.mode_polytope[mode]
+    return sample_from_polytope(p)
         
-        
+def sample_from_mode_old(s,mode,max_iterations=1000):
+    """
+    This is rejection sampling, remove it at next commit
+    """
+    i=0
+    while i<max_iterations:
+        x=sample(s.l[mode],s.u[mode])
+        a=np.dot(s.H[mode],x)<=s.h[mode]
+        if sum(a)==s.h[mode].shape[0]:
+            return x
+        else:
+            i+=1
+    raise("reached maximum iterations of sampling. Either increase maximum iterations, reshape the bounding box, or design a better sampler")

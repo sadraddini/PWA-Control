@@ -80,7 +80,7 @@ def polytopic_trajectory_to_set_of_polytopes(s,x0,T,list_of_polytopes,eps=0,meth
         G_n=valuation(G)
         theta_n=valuation(theta)
         z_n=mode_sequence(s,z)
-        if abs(np.linalg.det(G_n[0]))<10**-5:
+        if abs(np.linalg.det(G_n[0]))<10**-15:
             flag=False
         for polytope in list_of_polytopes:
             if abs(z_pol[polytope].X-1)<=0.1:

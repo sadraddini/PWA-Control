@@ -13,6 +13,7 @@ sys.path.append('../..')
 # Internal imports
 from main.ana_system import system,state
 from main.auxilary_methods import vertices_cube
+from main.polytope import polytope,anchor_point
 
 
 s=system(2,1)
@@ -60,13 +61,17 @@ s.u[2]=np.array([-0.1,1]).reshape(2,1)
 
 s.vertices=vertices_cube(2)
 
-s.W={}
-
+"""
+These are polytopes for each mode 
+"""
+s.mode_polytope={}
+for mode in s.modes:
+    p=polytope(s.H[mode],s.h[mode])
+    p.anchor=anchor_point(p)
+    s.mode_polytope[mode]=p
+    
 s.weight={}
 s.weight[0]=100/12
 s.weight[1]=1
-
-for i in s.modes:
-    s.W[i]=np.array([[1,1],[1,1]])
     
 s.goal=state(np.array([0,0]).reshape(2,1),np.array([[0.,0],[0,0.0]]),0,0,0,10)
