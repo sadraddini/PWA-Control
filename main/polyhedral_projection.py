@@ -9,25 +9,6 @@ Created on Mon Sep 10 18:12:19 2018
 import numpy as np
 from gurobipy import Model, GRB, LinExpr
 
-def canonical_polytope_old(H,h,atol=10**-8):
-    # Given H, h, provide canonical polytope by finding and removing redundant rows
-    # Also scale H such that its largest absolute element is 1
-    # REMOVE LATER
-    n=H.shape[1]
-    H_final=np.empty((0,n))
-    H_max=np.amax(abs(H),axis=1)
-    H_final=np.empty((0,n))
-    h_final=np.empty((0,1))
-    print("before removing redundancy",H,h)
-    for ROW in range(H.shape[0]):
-        if check_redundancy_row(H,h,ROW)==False:
-            H_scale=np.asscalar(H_max[ROW])
-            H_final=np.vstack((H_final,H[ROW,:]/H_scale))
-            h_final=np.vstack((h_final,h[ROW,:]/H_scale))
-        else:
-            pass
-    return (H_final,h_final)
-
 def canonical_polytope(H,h,flag=None,atol=10**-8):
     """
     Given a polytope in form {H x <= h}, provide canonical polytope by finding and removing redundant rows

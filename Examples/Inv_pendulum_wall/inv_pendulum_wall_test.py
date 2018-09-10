@@ -8,7 +8,7 @@ Created on Wed Jul 18 12:11:15 2018
 from inv_pendulum_wall import *
 
 import pickle
-s=pickle.load(open("inv_pendulum_wall.pkl","rb"))
+#s=pickle.load(open("inv_pendulum_wall.pkl","rb"))
 
 
 ### Internal imports
@@ -18,14 +18,11 @@ sys.path.append('../..')
 
 # Internal imports:
 from inv_pendulum_wall import *
-from main.visualization import visualize_set_tube,visualize_X_eps_time,visualize_X_eps_cost,visualize_subset_tree
+from main.visualization import visualize_set_tube,visualize_X_eps_time,visualize_X_eps_cost,visualize_subset_tree,visualize_X_time_hull_eps
 from main.tree import intitialize_tree,Random_Tree_of_Polytopes
 from main.tree_locator import tree_locator_time
 from main.simulate import simulate_vanilla
 from main.gurobi_m_library import trajectory_model
-
-from Convex_Hull.visualization_hulls import visualize_X_time_hull_eps
-
 
 s.library={}
 Tmax=20
