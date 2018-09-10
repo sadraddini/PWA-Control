@@ -57,7 +57,7 @@ def extend_RRT(s,T,alpha_start=10**5,eps=0.1):
                     print("+"*80,"Connected to Tree","+"*80)
                     return True
                 
-def extend_RRT_MILP(s,T,eps=0.1,K=100):
+def extend_RRT_MILP(s,T,eps=0.1,K=20):
     i=choice(s.modes)
     #x_sample=sample(s.l[i],s.u[i])
     x_sample=sample_from_mode(s,i)

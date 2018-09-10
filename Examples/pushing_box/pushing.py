@@ -20,7 +20,7 @@ from main.polytope import polytope,anchor_point
 s=system(6,2)
 s.modes=[1,2,3,4]
 
-dt=0.01 # time-step
+dt=0.05 # time-step
 alpha=1 # translational coefficient
 beta=1 # angular coefficient
 gamma=1 # sliding coefficient
@@ -98,8 +98,8 @@ s.c[3]=np.array([0,0,0,0,0,0]).reshape(6,1)
 s.H[3]=np.vstack((np.eye(6),-np.eye(6)))
 s.h[3]=np.array([xmax,ymax,theta_eps,b_eps,rx_nominal*1.2,ry_max,0,ymax,theta_eps,b_eps,-rx_nominal*0.8,ry_max]).reshape(12,1)
 
-s.H[3]=np.vstack((s.H[2],np.array([0,0,0,0,mu,-1]).reshape(1,6)))
-s.h[3]=np.vstack((s.h[2],np.zeros((1,1))))
+s.H[3]=np.vstack((s.H[3],np.array([0,0,0,0,mu,-1]).reshape(1,6)))
+s.h[3]=np.vstack((s.h[3],np.zeros((1,1))))
 
 
 """
@@ -124,8 +124,8 @@ s.c[4]=np.array([0,0,0,0,0,0]).reshape(6,1)
 s.H[4]=np.vstack((np.eye(6),-np.eye(6)))
 s.h[4]=np.array([xmax,ymax,theta_eps,b_eps,rx_nominal*1.2,ry_max,0,ymax,theta_eps,b_eps,-rx_nominal*0.8,ry_max]).reshape(12,1)
 
-s.H[4]=np.vstack((s.H[2],np.array([0,0,0,0,mu,1]).reshape(1,6)))
-s.h[4]=np.vstack((s.h[2],np.zeros((1,1))))
+s.H[4]=np.vstack((s.H[4],np.array([0,0,0,0,mu,1]).reshape(1,6)))
+s.h[4]=np.vstack((s.h[4],np.zeros((1,1))))
 
 """
 Control limits and bounding-boxes
@@ -163,4 +163,4 @@ s.weight[5]=1/ry_max
 
 s.vertices=vertices_cube(6)
     
-s.goal=state(np.array([1,0,0,0,1,0]).reshape(6,1),np.eye(6)*0.01,0,0,0,10)
+s.goal=state(np.array([10,0,0,0,1,0]).reshape(6,1),np.eye(6)*0.01,0,0,0,10)

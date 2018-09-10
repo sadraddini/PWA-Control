@@ -18,6 +18,6 @@ from main.simulate import simulate_vanilla,simulate_convex
 
 array_tree(s)
 
-x0=np.array([-0.01,0.9]).reshape(2,1)
+x0=np.array([0.05,0.5]).reshape(2,1)
 simulate_convex(s,x0)
 visualize_set_tube_simulation(s,-0.12,0.12,-1,1,"Angle","Angular Velocity","time_optimal")

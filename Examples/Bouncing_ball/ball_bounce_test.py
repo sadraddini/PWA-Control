@@ -15,11 +15,9 @@ import sys
 sys.path.append('../..')
 
 
-from main.visualization import visualize_set_tube,visualize_subset_tree,visualize_X_eps_time,visualize_X_eps_cost
+from main.visualization import visualize_set_tube,visualize_subset_tree,visualize_X_eps_time,visualize_X_eps_cost,visualize_X_time_hull_eps
 from main.tree import intitialize_tree,Random_Tree_of_Polytopes,tree_value_function
 from main.gurobi_m_library import trajectory_model
-
-from Convex_Hull.visualization_hulls import visualize_X_time_hull_eps
 
 
 Tmax=20

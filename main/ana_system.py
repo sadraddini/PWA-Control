@@ -6,7 +6,7 @@ Created on Mon Jul  2 15:37:31 2018
 @author: sadra
 """
 
-from gurobipy import *
+from gurobipy import Model,LinExpr,QuadExpr
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches

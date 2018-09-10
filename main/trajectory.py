@@ -58,7 +58,7 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
     i_start=find_mode(s,x0)
     for i in s.modes:
         model.addConstr(z[0,i]==int(i==i_start))
-    model.setParam('OutputFlag',False)
+    # model.setParam('OutputFlag',False)
     if alpha_start==-1:
         x_delta={}
         for row in range(s.n):
@@ -82,7 +82,7 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
         G_n=valuation(G)
         theta_n=valuation(theta)
         z_n=mode_sequence(s,z)
-        if abs(np.linalg.det(G_n[0]))<10**-5:
+        if abs(np.linalg.det(G_n[0]))<10**-15:
             flag=False
         final=(x_n,u_n,G_n,theta_n,z_n,flag)
     print("starting removal process")
@@ -117,7 +117,7 @@ def make_state_trajectory_state_end(s,x,u,seq,G,theta,T,state_end):
     for t in range(1,T):
         x_temp[t].parent.append(x_temp[t-1])
     state_end.parent.append(x_temp[T-1])
-    s.X.extend(x_temp.values())
+    s.X.extend(list(x_temp.values())[::-1])
     
 
 def subset_MILP(model,G,Pi,H,h,x,z_time_mode):

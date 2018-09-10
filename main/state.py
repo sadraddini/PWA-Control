@@ -35,7 +35,7 @@ class state:
         self.mode=mode
         self.ID=ID
         self.t=t
-        self.character=character # 0 for goal, 1 for ordinary paralleltope, 2 for 
+        self.character=character # 0 for goal, 1 for ordinary paralleltope 
         v=vertices_cube(G.shape[1])
         self.vertices=(np.dot(G,v.T)).T
         self.vertices_eps=(np.dot(self.G_eps,v.T)).T

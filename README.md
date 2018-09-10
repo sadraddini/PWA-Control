@@ -17,15 +17,15 @@ The full version (corrections made) is available [here](https://github.com/sadra
 * Python 2.7 or later (*recommended*: Python 3.6 or later)
 * [Gurobi](http://www.gurobi.com/) Version 7.0 or later
 
-### Folder descriptions
+### Folder Descriptions
 * Main: source code of methods
 * Convex_Hull (*new*): methods related to disjuctive programming for faster tree extention 
 * Examples: 
-    * The Bouncing ball 
+    * Bouncing ball 
     * Inverted pendulum with wall, Example 1 in [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
     * Inverted pendulum with two walls - one on each side
     * 4-Mode system from Example 2 in [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
-    * Hybrid stabilization of Planar Pushing (*under development*)
+    * Hybrid stabilization of Planar Pushing (*new*) ![Pushing](https://raw.githubusercontent.com/sadraddini/PWA-Control/master/Examples/pushing_box/figures/output_WayUmi.gif)
 
 ### How to use guide:
 The user may use the following to formulate a PWA control problem and obtain a controller. The following guide is the general picture, and it does not include minor details. The reader is encouraged to check the examples. 
@@ -42,9 +42,9 @@ So far, we have only considered cases where PWA cells are constructed in state s
     * The second controller solves a small convex program to keep the system within the tree, or close to the tree, while decreasing the value function. This controller can handle states outside of the tree, but does not provide any guarantee that the state gets into the goal- unless the state falls into the tree.
 
 ### Visualization
-Current version only supports visualization for 2D problems. See examples. 
+Current version only supports visualization for 2D problems. For higher dimensions, projections to 2D are performed. See examples. 
 
 ### Contact us
 If you have any questions regarding this work, or you are willing to contribute, please contact [Sadra Sadraddini](sadra@mit.edu) 
 
-Last updated on Aug 31, 2018. 
+Last updated on Sep 10, 2018. 

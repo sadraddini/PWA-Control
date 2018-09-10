@@ -22,7 +22,7 @@ for t in range(42):
     u=np.array([1,0])
     x=pushing_evolve(x,u)+(np.array(2)-0.5)*0.0000
 #%%  Controllability
-    mode=3
+    mode=4
     C=s.B[mode]
     for n in range(1,6):
         C=np.hstack((C,np.dot(np.linalg.matrix_power(s.A[mode], n),s.B[mode])))

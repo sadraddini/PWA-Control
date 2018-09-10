@@ -16,6 +16,20 @@ def find_mode(s,x,eps=10**-9):
             return mode
     raise(ValueError("Error! out of state space:",x.T))
 
+def find_mode_control(s,x):
+    """
+    Description: Given system s and state x, find the closest mode
+    """
+    d_min=1000
+    best_mode=None
+    for mode in s.modes:
+        d=-np.amin(s.h[mode]-np.dot(s.H[mode],x))
+        if d<d_min:
+            best_mode=mode
+            d_min=d
+    return best_mode
+
+
 def valuation(x):
     """
     Description: given a set of Gurobi variables, output a similar object with values
