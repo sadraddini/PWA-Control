@@ -23,6 +23,8 @@ sys.path.append('..')
 from main.auxilary_methods import find_mode,valuation,mode_sequence
 from main.ana_system import state,cost_state
 
+from Verification.verification_polytopes import re_verification
+
 def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
     (model,x,u,G,theta,z)=s.library[T]
     n_vars=len(model.getVars())
@@ -104,20 +106,26 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
     return final
     
 def make_state_trajectory_state_end(s,x,u,seq,G,theta,T,state_end):
-    x_temp={}
-    ID=s.ID
-    s.ID+=1
-    for t in range(0,T):
-        x_temp[t]=state(x[t],G[t],seq[t],ID,t,1)
-        x_temp[t].time_to_go=T-t+state_end.time_to_go
-    # Build Transitons
-    for t in range(0,T-1):
-        x_temp[t].successor=(x_temp[t+1],u[t],theta[t])
-    x_temp[T-1].successor=(state_end,u[T-1],theta[T-1])
-    for t in range(1,T):
-        x_temp[t].parent.append(x_temp[t-1])
-    state_end.parent.append(x_temp[T-1])
-    s.X.extend(list(x_temp.values())[::-1])
+    flag=re_verification(s,state(x[T-1],G[T-1],seq[T-1],-1,-1,-1),state_end)
+    if flag==None:
+        return
+    else:
+        u[T-1]=flag[0]
+        theta[T-1]=flag[1]
+        x_temp={}
+        ID=s.ID
+        s.ID+=1
+        for t in range(0,T):
+            x_temp[t]=state(x[t],G[t],seq[t],ID,t,1)
+            x_temp[t].time_to_go=T-t+state_end.time_to_go
+        # Build Transitons
+        for t in range(0,T-1):
+            x_temp[t].successor=(x_temp[t+1],u[t],theta[t])
+        x_temp[T-1].successor=(state_end,u[T-1],theta[T-1])
+        for t in range(1,T):
+            x_temp[t].parent.append(x_temp[t-1])
+        state_end.parent.append(x_temp[T-1])
+        s.X.extend(list(x_temp.values())[::-1])
     
 
 def subset_MILP(model,G,Pi,H,h,x,z_time_mode):

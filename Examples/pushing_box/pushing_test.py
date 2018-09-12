@@ -19,7 +19,7 @@ from main.gurobi_m_library import trajectory_model
 
 
 s.library={}
-Tmax=3
+Tmax=5
 for T in range(1,Tmax+1):
     print(T)
     trajectory_model(s,T)

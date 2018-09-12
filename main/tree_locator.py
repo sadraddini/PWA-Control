@@ -39,12 +39,12 @@ def sorted_distance_states(s,x):
     return [s.X[i] for i in indices]
 
 def zero_distance_states(s,x):
-    return [s.X[index] for index in range(len(s.X)) if d_tree(s,x)[index][0]<10**-6]
+    return [s.X[index] for index in range(len(s.X)) if d_tree(s,x)[index][0]<10**-4]
 
 def tree_locator_time(s,x):
     STATES=zero_distance_states(s,x)
     if STATES==[]:
-        print("---- out of tree")
+        print("---- out of the tree")
         return sorted_distance_states(s,x)[0]
     else:
         print("++++ inside the tree")

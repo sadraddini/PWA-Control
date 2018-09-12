@@ -9,43 +9,37 @@ Created on Mon Sep 10 18:12:19 2018
 import numpy as np
 from gurobipy import Model, GRB, LinExpr
 
+import sys
+sys.path.append('..')
+
+from main.auxilary_methods import rank_matrix
+
 def canonical_polytope(H,h,flag=None,atol=10**-8):
     """
     Given a polytope in form {H x <= h}, provide canonical polytope by finding and removing redundant rows
     Also scale H such that its largest absolute element is 1
     """
-    if flag==None: # Construct flag for each row
-        flag={} 
-        for ROW in range(H.shape[0]):
-            if check_redundancy_row(H,h,ROW)==True:
-                flag[ROW]=False # It "may" be removed
-            else:
-                flag[ROW]=True # It must remain
-        return canonical_polytope(H,h,flag) 
-    elif [row for row in range(H.shape[0]) if flag[row]==False]==[]: # No row is needed to be removed
-        return normalize(H,h)
-    elif len([row for row in range(H.shape[0]) if flag[row]==False])==1: # Remove the only remaining false row
-        a_false_row=[row for row in range(H.shape[0]) if flag[row]==False][0]
-        removed_ROW=list(range(0,a_false_row))+list(range(a_false_row+1,H.shape[0]))
-        H=H[removed_ROW,:]
-        h=h[removed_ROW,:]
-        return normalize(H,h)         
-    else: # Let's remove one of the False rows
-        a_false_row=[row for row in range(H.shape[0]) if flag[row]==False][0]
-        rows_one_removed=list(range(0,a_false_row))+list(range(a_false_row+1,H.shape[0]))
-        flag_new={}
-        row=0
-        for ROW in rows_one_removed:
-            flag_new[row]=flag[ROW]
+    print(H.shape)
+    row=0
+    while row<H.shape[0]:
+        if check_redundancy_row(H,h,row,atol)==True: # The row should be removed
+            (H,h)=remove_row(H,h,row)
+            row=row
+        else:
             row+=1
-        H=H[rows_one_removed,:]
-        h=h[rows_one_removed,:]
-        for row in range(H.shape[0]):
-            if flag_new[row]==False:
-                if check_redundancy_row(H,h,row)==False:
-                    flag_new[row]=True
-        return canonical_polytope(H,h,flag_new,atol) 
-                    
+    return normalize(H,h)
+    
+def remove_row(H,h,row):
+    """
+    Given {x| Hx <= h}, remove the row'th row of H and h
+    """
+    remaining_rows=list(range(0,row))+list(range(row+1,H.shape[0]))
+    H_new=H[remaining_rows,:]
+    h_new=h[remaining_rows,:]
+    assert H_new.shape[0]==H.shape[0]-1
+    return (H_new,h_new)
+    
+                  
 
 def check_redundancy_row(H,h,ROW,atol=10**-8):
     model=Model("Row Redundancy Check")
@@ -74,7 +68,8 @@ def check_redundancy_row(H,h,ROW,atol=10**-8):
         return False
     
 def normalize(H,h):
-    H_max=np.amax(abs(H),axis=1)
+#    H_max=np.amax(abs(H),axis=1)
+    H_max=np.linalg.norm(H,axis=1)
     H=np.dot(np.diag(1/H_max),H)
     h=np.dot(np.diag(1/H_max),h)
     return (H,h)
@@ -110,19 +105,40 @@ def fourier_motzkin_eliminate_single(var_index,A,b,C=None,d=None,atol=10**-8):
         if phi_core!=[]:
             A_new=np.vstack((A_new,A[phi_core,:][:,other]))
             b_new=np.vstack((b_new,b[phi_core,:]))
+        print("F-M eliination: ",A.shape," to ",A_new.shape)
         return canonical_polytope(A_new,b_new)
 
 def project(T,d_translate,A,b,C=None,d=None,atol=10**-8):
     """
     Finds the H-representation of T{Ax<=b, Cx=d}+d_translate
     """
+    print("projecting polytope!")
     (m,n)=T.shape # m: y, n: x, y=Tx
-    if C==None and d==None:
+    print("rank of T is",rank_matrix(T))
+    if m==n and rank_matrix(T)==n:
+        Tinv=np.linalg.inv(T)
+        A=np.dot(A,Tinv)
+        b=b+np.dot(A,d_translate)
+        return normalize(A,b)
+    elif C==None and d==None:
         A=np.hstack((np.zeros((A.shape[0],m)),A))
         b=b
         C=np.hstack((-np.eye(m),T))
         d=-d_translate
         (A,b)=fourier_motzkin_eliminate_single(n+m-1,A,b,C,d,atol)
+        print("Elimination 1")
         for j in range(n-1):
+            print("Elimination %d"%(j+2))
             (A,b)=fourier_motzkin_eliminate_single(A.shape[1]-1,A,b,None,None,atol)
+        print("end of projecting polytope")
         return (A,b)
+    else:
+        raise("I don't know how to handle this")
+        
+def check_copy_rows(H,h):
+    """
+    Remove dedundancies that come from sources 
+    """
+    for row in range(H.rows[0]):
+        pass
+    

@@ -20,15 +20,15 @@ def simulate_vanilla(s,x):
     while t<100:
         t+=1
         s.traj.append(x)
-        print("state:",x.T)
+        print("\n\n state:",x.T)
         u=control_vanilla(s,x)
-        if u=="END":
-            print("END Control")
+        if u[0][0]==None:
+            print("END of Control")
             return
         print("control:",u.T)
         x=evolve(s,x,u)
         
-def simulate_convex(s,x,t_max=150):
+def simulate_convex(s,x,t_max=100):
     t=0
     s.traj=[]
     s.control_traj=[]
@@ -38,10 +38,11 @@ def simulate_convex(s,x,t_max=150):
         s.traj.append(x)
         print("\n\n state:",x.T)
         u=control_convex(s,x)
-        s.control_traj.append(u)
-        if u=="END":
+        print(u)
+        if u[0][0]==None:
             print("END Control")
             return
+        s.control_traj.append(u)
         print("control:",u.T)
         x=evolve(s,x,u)
     

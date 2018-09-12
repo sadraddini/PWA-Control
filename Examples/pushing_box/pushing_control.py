@@ -17,6 +17,8 @@ from main.simulate import simulate_vanilla,simulate_convex
 
 array_tree(s)
 
-x0=np.array([4,0.5,0,0,1,0]).reshape(6,1)
+x0=np.array([7,-0.2,0.1,0,1,0]).reshape(6,1)
 simulate_convex(s,x0)
-visualize_set_tube_simulation(s,-0.12,0.12,-1,1,"Angle","Angular Velocity","time_optimal")
+
+visualize_proj_eps_states_simulation(s.X,0,1,xmin=0,xmax=10,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot")
+visualize_proj_eps_states_simulation(s.X,1,2,xmin=-1,xmax=1,ymin=-0.5,ymax=0.5,xlabel='x_1',ylabel='x_2',title="interesting plot")

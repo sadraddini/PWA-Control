@@ -39,7 +39,7 @@ for row in range(4):
 s.c[1]=np.zeros((6,1))
 
 xmax=10
-ymax=10
+ymax=3
 theta_max=np.pi
 bmax=1
 rx_max=1.5

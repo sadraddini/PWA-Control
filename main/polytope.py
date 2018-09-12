@@ -51,7 +51,7 @@ def TQ_to_polytope(T,d,tol=10**-8):
     """
     n=T.shape[0]
     (H,h)=project(T,d,PI(n),np.ones((2*n,1)))
-    rank=rank_matrix(H)            
+    rank=rank_matrix(T)          
     return polytope(H,h,rank)     
         
 
