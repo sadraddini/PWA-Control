@@ -47,6 +47,8 @@ class system:
         self.tree_size={}
         # ID
         self.ID=0
+        self.core_constraints={}
+        self.core_Vars={}
         
     def __repr__(self):
         return self.name+" with "+str(len(self.modes))+" modes"

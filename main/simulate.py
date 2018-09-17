@@ -28,7 +28,7 @@ def simulate_vanilla(s,x):
         print("control:",u.T)
         x=evolve(s,x,u)
         
-def simulate_convex(s,x,t_max=100):
+def simulate_convex(s,x,t_max=250):
     t=0
     s.traj=[]
     s.control_traj=[]

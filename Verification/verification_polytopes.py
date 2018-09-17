@@ -118,7 +118,7 @@ def print_flags(s):
     for y in [y for y in s.X if y!=s.goal]:
         print(y,"d:",y.polytope.dimensions,y.successor[0],"d:",y.successor[0].polytope.dimensions,"\t",y.successor_flag)
         
-def re_verification(s,state_X,state_end):
+def re_verification(s,state_X,state_end,factor=0.99):
     """
     This is a method to deal with numerical inaccuracies in high dimensioanl MILPs that are terminated early.
     Requires solving a linear program. If feasible, the computed control startegy is recomputed. 
@@ -127,14 +127,10 @@ def re_verification(s,state_X,state_end):
     Output: flag, u, theta
     """
     model=Model("verifying tree extention")
-    Lambda_main=np.empty((state_end.polytope.H.shape[0],s.Pi.shape[0]),dtype='object')
-    for row in range(state_end.polytope.H.shape[0]):
-        for column in range(s.Pi.shape[0]):
-            Lambda_main[row,column]=model.addVar(lb=0,ub=GRB.INFINITY)
     G_dynamic=np.empty((s.n,s.n),dtype='object')
     theta=np.empty((s.m,s.n),dtype='object')
     u=np.empty((s.m,1),dtype='object')
-    Hx_center=np.empty((state_end.polytope.H.shape[0],1),dtype='object') #H(Ax+Bu)
+    x_bar=np.empty((s.n,1),dtype='object')
     for row in range(s.n):
         for column in range(s.n):
             G_dynamic[row,column]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
@@ -142,27 +138,26 @@ def re_verification(s,state_X,state_end):
         u[row,0]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
         for column in range(s.n):
             theta[row,column]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
-    for row in range(state_end.polytope.H.shape[0]):
-        Hx_center[row,0]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
+    for row in range(s.n):
+        x_bar[row,0]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
     model.update()
     i=state_X.mode
     for row in range(s.n):
         for column in range(s.n):
             AG=LinExpr()
             for k in range(s.n):
-                AG.add(s.A[i][row,k]*state_X.G[row,column])
+                AG.add(s.A[i][row,k]*state_X.G[k,column])
             for k in range(s.m):
                 AG.add(s.B[i][row,k]*theta[k,column])
-            model.addConstr(G_dynamic[row,column]==AG)
-    for row in range(state_end.polytope.H.shape[0]):
-        HAx=LinExpr()
-        for k in range(s.n):
-            for j in range(s.m):
-                HAx.add(state_end.polytope.H[row,k]*s.A[i][k,j]*u[j,0]+np.dot(state_end.polytope.H,np.dot(s.A[i],state_end.x))[row,0])
-        model.addConstr(HAx==Hx_center[row,0])
-    constraints_AB_eq_CD(model,Lambda_main,s.Pi,state_end.polytope.H,G_dynamic)
-    constraints_Ab_smaller_c(model,Lambda_main,np.ones((2*s.n,1)),state_end.polytope.h-Hx_center)
+            model.addConstr(G_dynamic[row,column]==AG*factor)
+    for row in range(s.n):
+        Bu=LinExpr()
+        for k in range(s.m):
+            Bu.add(s.B[i][row,k]*u[k,0])
+        model.addConstr(x_bar[row,0]==np.dot(s.A[i],state_X.x)[row,0]+Bu+s.c[i][row,0])
+    subset(model,G_dynamic,s.Pi,state_end.polytope.H,state_end.polytope.h,x_bar)
     subset(model,theta,s.Pi,s.F[i],s.f[i],u)
+    model.setParam("OutputFlag",False)
     model.optimize() 
     if model.Status==2:
         print("Tree extention verified succesuflly!")
@@ -170,6 +165,59 @@ def re_verification(s,state_X,state_end):
     else:
         print("\n-"*10,"Tree extention failed!","\n-"*10)
         return None
+
+def re_verification_tree_extension(s,x,G,i,state_end,factor=0.99):
+    """
+    This is a method to deal with numerical inaccuracies in high dimensioanl MILPs that are terminated early.
+    Requires solving a linear program. If feasible, the computed control startegy is recomputed. 
+    If infeasible, report back, raise a flag, and abort the tree extention
+    Inputs: state_X, state_end
+    Output: flag, u, theta
+    """
+    model=Model("verifying tree extention")
+    G_dynamic=np.empty((s.n,s.n),dtype='object')
+    theta=np.empty((s.m,s.n),dtype='object')
+    u=np.empty((s.m,1),dtype='object')
+    x_bar=np.empty((s.n,1),dtype='object')
+    for row in range(s.n):
+        for column in range(s.n):
+            G_dynamic[row,column]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
+    for row in range(s.m):
+        u[row,0]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
+        for column in range(s.n):
+            theta[row,column]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
+    for row in range(s.n):
+        x_bar[row,0]=model.addVar(lb=-GRB.INFINITY,ub=GRB.INFINITY)
+    model.update()
+    for row in range(s.n):
+        for column in range(s.n):
+            AG=LinExpr()
+            for k in range(s.n):
+                AG.add(s.A[i][row,k]*G[k,column])
+            for k in range(s.m):
+                AG.add(s.B[i][row,k]*theta[k,column])
+            model.addConstr(G_dynamic[row,column]==AG*factor)
+    for row in range(s.n):
+        Bu=LinExpr()
+        for k in range(s.m):
+            Bu.add(s.B[i][row,k]*u[k,0])
+        model.addConstr(x_bar[row,0]==np.dot(s.A[i],x)[row,0]+Bu+s.c[i][row,0])
+    eps=subset_eps(model,G_dynamic,s.Pi,state_end.polytope.H,state_end.polytope.h,x_bar)
+    subset(model,theta,s.Pi,s.F[i],s.f[i],u)
+    model.setParam("OutputFlag",False)
+    model.optimize() 
+    if model.Status==2:
+        print("eps=",valuation(eps).T)
+        if np.amax(valuation(eps))>10**-3:
+            print("\n-"*10,"Too large of Epsilon: %d Tree extention failed!"%np.amax(valuation(eps)),"\n-"*10)
+            return None
+        else:
+            print("Tree extention verified succesuflly!")
+            return (valuation(u),valuation(theta),valuation(eps))
+    else:
+        print("\n-"*10,"Infeasible! Tree extention failed!","\n-"*10)
+        return None
+    
     
 def subset(model,G,Pi,H,h,x):
     """
@@ -211,3 +259,54 @@ def subset(model,G,Pi,H,h,x):
         for k in range(n):
             s_right.add(H[row,k]*x[k,0])
         model.addConstr(s_left<=h[row,0]-s_right)
+
+def subset_eps(model,G,Pi,H,h,x):
+    """
+    Description: Add Farkas lemma constraints for subset inclusion of x+GP in {e|H.<h}
+    Inputs: 
+        model: Gurobi optimization model
+        G: n * n_g generator matrix
+        Pi:  n_pi*n matrix where {x|Pi x< 1} is the primitive polytope
+        {x| Hx<h} is the set constraint
+        x is the point
+    Output:
+        no direct output. Adds constraints to the model. 
+        FUTURE: we may add lambda positive matrix as an output for debugging
+    """
+    (n,n_g)=G.shape
+    (n_p,n)=Pi.shape
+    (n_h,n)=H.shape
+    Lambda=np.empty((n_h,n_p),dtype='object')
+    eps=np.empty((n_h,1),dtype='object')
+    for row in range(n_h):
+        for column in range(n_p):
+            Lambda[row,column]=model.addVar(lb=0)
+        eps[row,0]=model.addVar(lb=0,obj=1)
+    model.update()
+    # Lambda * Pi = H * G
+    for row in range(n_h):
+        for column in range(n_g):
+            s_left=LinExpr()
+            s_right=LinExpr()
+            for k in range(n_p):
+                s_left.add(Lambda[row,k]*Pi[k,column])
+            for k in range(n):
+                s_right.add(H[row,k]*G[k,column])
+            model.addConstr(s_left==s_right)
+    # Lambda * 1 <= H*
+    for row in range(n_h):
+        s_left=LinExpr()
+        s_right=LinExpr()
+        for k in range(n_p):
+            s_left.add(Lambda[row,k])
+        for k in range(n):
+            s_right.add(H[row,k]*x[k,0])
+        model.addConstr(s_left<=h[row,0]-s_right+eps[row,0])
+    return eps
+
+def verify_H_rep(s,state_X):
+    return np.dot(state_X.polytope.H,state_X.x+np.dot(state_X.G,s.vertices[0,:].reshape((s.n,1))))<=state_X.polytope.h+10**-6
+
+def verify_failures(s,index):
+    (x,G,mode,u,theta,x_s,G_s,mode_s,state_end)=s.failure_tree_extentions[index]
+    re_verification_tree_extension(s,x,G,mode,state_end)

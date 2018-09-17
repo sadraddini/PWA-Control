@@ -105,7 +105,7 @@ def fourier_motzkin_eliminate_single(var_index,A,b,C=None,d=None,atol=10**-8):
         if phi_core!=[]:
             A_new=np.vstack((A_new,A[phi_core,:][:,other]))
             b_new=np.vstack((b_new,b[phi_core,:]))
-        print("F-M eliination: ",A.shape," to ",A_new.shape)
+        print("F-M elimination: ",A.shape," to ",A_new.shape)
         return canonical_polytope(A_new,b_new)
 
 def project(T,d_translate,A,b,C=None,d=None,atol=10**-8):

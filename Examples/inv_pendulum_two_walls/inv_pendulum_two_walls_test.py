@@ -22,6 +22,7 @@ from main.gurobi_m_library import trajectory_model
 
 
 s.library={}
+s.failure_tree_extentions=[]
 Tmax=15
 for T in range(1,Tmax+1):
     print(T)

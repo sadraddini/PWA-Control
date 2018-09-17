@@ -23,7 +23,7 @@ sys.path.append('..')
 from main.auxilary_methods import find_mode,valuation,mode_sequence
 from main.ana_system import state,cost_state
 
-from Verification.verification_polytopes import re_verification
+from Verification.verification_polytopes import re_verification_tree_extension
 
 def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
     (model,x,u,G,theta,z)=s.library[T]
@@ -84,8 +84,8 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
         G_n=valuation(G)
         theta_n=valuation(theta)
         z_n=mode_sequence(s,z)
-        if abs(np.linalg.det(G_n[0]))<10**-15:
-            flag=False
+#        if abs(np.linalg.det(G_n[0]))<10**-15:
+#            flag=False
         final=(x_n,u_n,G_n,theta_n,z_n,flag)
     print("starting removal process")
     print("start=",n_vars,"variables and ",n_constraints," constraints")
@@ -93,21 +93,24 @@ def polytope_trajectory(s,x0,state_end,T,alpha_start,eps=0.1,coin=random()):
     new_n_constraints=len(model.getConstrs())
     print("new:",new_n_vars,"variables and ",new_n_constraints," constraints")    
     time_start=time()
-    for i in range(new_n_vars-n_vars):
-        model.remove(model.getVars()[-i-1])
-    model.update()
-    for i in range(new_n_constraints-n_constraints):
-        model.remove(model.getConstrs()[-i-1]) 
-    model.update()
-    n_vars=len(model.getVars())
-    n_constraints=len(model.getConstrs())
-    print("final:",n_vars,"variables and ",n_constraints," constraints")    
+    remove_new_constraints(s,model,T)    
     print("end of removal in ",time()-time_start," seconds")
     return final
+
+def remove_new_constraints(s,model,T):
+    print("After: The number of variables is %d and # constraints is %d"%(len(model.getVars()),len(model.getConstrs()))) 
+    for c in list(set(model.getConstrs()) - set(s.core_constraints[T])):
+        model.remove(c)
+    for v in list(set(model.getVars()) - set(s.core_Vars[T])):
+        model.remove(v)
+    model.update()
+    print("Last: The number of variables is %d and # constraints is %d"%(len(model.getVars()),len(model.getConstrs()))) 
+   
     
 def make_state_trajectory_state_end(s,x,u,seq,G,theta,T,state_end):
-    flag=re_verification(s,state(x[T-1],G[T-1],seq[T-1],-1,-1,-1),state_end)
+    flag=re_verification_tree_extension(s,x[T-1],G[T-1],seq[T-1],state_end,factor=0.95)
     if flag==None:
+        s.failure_tree_extentions.append((x[T-1],G[T-1],seq[T-1],u[T-1],theta[T-1],x[T],G[T],seq[T],state_end))
         return
     else:
         u[T-1]=flag[0]
@@ -334,7 +337,7 @@ def state_trajectory(s,x0,state_end,T):
     i_start=find_mode(s,x0)
     for i in s.modes:
         model.addConstr(z[0,i]==int(i==i_start))
-    model.setParam('OutputFlag',False)
+    model.setParam('OutputFlag',True)
     for row in range(s.n):
         model.addConstr(x[0][row,0]==x0[row,0])
     model.optimize()

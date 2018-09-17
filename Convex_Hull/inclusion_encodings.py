@@ -95,3 +95,12 @@ def Q_inside_conv_P_s(s,model,x,G,Q,list_of_polytopes):
         for column in range(n_g):
             model.addConstr(G_sum[row,column]==G[row,column])
     return z_pol
+
+def  TQd_inside_one_of_the_states(model,T,Q,d,z,list_of_states):
+    """
+    Inputs:
+        model: Gurobi model
+        T= Transformation Matrix
+        
+    """
+    pass

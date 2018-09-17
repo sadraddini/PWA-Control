@@ -44,7 +44,7 @@ class state:
         self.time_to_go=0
         self.cost_to_child=0
         self.parent=[]
-        self.polytope=state_to_polytope(self)
+        self.polytope=state_to_polytope(self,method="eps")
             
     def __repr__(self):
         return self.name

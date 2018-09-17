@@ -11,6 +11,7 @@ from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.collections import PatchCollection
+import pylab
 
 from main.ana_system import states_time_order,states_cost_order
 
@@ -41,8 +42,8 @@ def visualize_set_tube(list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,tube_size=0.
 def visualize_set_tube_simulation(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
     ax1 = plt.subplot(111)
     plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel)
+    ax1.set_xlabel(xlabel,fontsize=20)
+    ax1.set_ylabel(ylabel,fontsize=20)
     ax1.set_xlim([xmin,xmax])
     ax1.set_ylim([ymin,ymax])
     vertices_0=np.array([[1,-1,-1,1],[1,1,-1,-1]])
@@ -58,17 +59,16 @@ def visualize_set_tube_simulation(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',y
     trajectory=np.array(s.traj)
     ax1.plot(trajectory[:,0,:],trajectory[:,1,:],'r',linewidth=0.5)
     ax1.plot(trajectory[:,0,:],trajectory[:,1,:],'ro')
-    ax1.set_xlabel('Height',fontsize=24)
-    ax1.set_ylabel('Velocity',fontsize=24)
+    ax1.plot([0.1,0.1],[-1,1],'black')
     plt.show()
     
 
 
 def visualize_X_eps_time(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
     ax1 = plt.subplot(111)
-    plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel)
+    plt.figure(figsize=(10,10),dpi=80, facecolor='w', edgecolor='k')
+    ax1.set_xlabel(xlabel,fontsize=20)
+    ax1.set_ylabel(ylabel,fontsize=20)
     ax1.set_xlim([xmin,xmax])
     ax1.set_ylim([ymin,ymax])
     vertices_0=np.array([[1,-1,-1,1],[1,1,-1,-1]])
@@ -83,7 +83,7 @@ def visualize_X_eps_time(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_
     p=PatchCollection(p_list,color=[(state.time_to_go/max_T,1-state.time_to_go/max_T,0) for state in STATES[::-1]])
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
-    ax1.set_title(title)
+#    ax1.set_title(title)￼
     plt.show()
     return plt
 
@@ -94,6 +94,8 @@ def visualize_X_eps_cost(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_
     ax1.set_ylabel(ylabel)
     ax1.set_xlim([xmin,xmax])
     ax1.set_ylim([ymin,ymax])
+    plt.rc('xtick', labelsize=15)
+    plt.rc('ytick', labelsize=15)
     vertices_0=np.array([[1,-1,-1,1],[1,1,-1,-1]])
     # Trajectories
     p_list=[]
@@ -123,21 +125,49 @@ def vertices_hull_eps(s,list_of_states):
 def visualize_X_time_hull_eps(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
     ax1 = plt.subplot(111)
     plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel)
+    ax1.set_xlabel(xlabel,fontsize=20)
+    ax1.set_ylabel(ylabel,fontsize=20)
     ax1.set_xlim([xmin,xmax])
     ax1.set_ylim([ymin,ymax])
     STATES=states_time_order(s)
     max_T=max([state.time_to_go for state in STATES])
     p_list=[]
     for state in STATES[::-1]:
-        p_list.append(patches.Polygon(vertices_hull_eps(s,[state]+[state.successor[0]]), True))
+        if state.mode==state.successor[0].mode:
+            p_list.append(patches.Polygon(vertices_hull_eps(s,[state]+[state.successor[0]]), True))
+        else:
+            p_list.append(patches.Polygon(vertices_hull_eps(s,[state]), True))
+    p=PatchCollection(p_list,color=[(state.time_to_go/max_T,1-state.time_to_go/max_T,0) for state in STATES[::-1]])
+    ax1.add_collection(p)
+    ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
+    ax1.set_title(title)
+    ax1.plot([0.1,0.1],[-1,1],'black')
+    plt.show()
+    return plt
+
+def visualize_X_time_hull_eps_simulation(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
+    ax1 = plt.subplot(111)
+    plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
+    ax1.set_xlabel(xlabel,fontsize=20)
+    ax1.set_ylabel(ylabel,fontsize=20)
+    ax1.set_xlim([xmin,xmax])
+    ax1.set_ylim([ymin,ymax])
+    STATES=states_time_order(s)
+    max_T=max([state.time_to_go for state in STATES])
+    p_list=[]
+    for state in STATES[::-1]:
+        if state.mode==state.successor[0].mode:
+            p_list.append(patches.Polygon(vertices_hull_eps(s,[state]+[state.successor[0]]), True))
+        else:
+            p_list.append(patches.Polygon(vertices_hull_eps(s,[state]), True))
     p=PatchCollection(p_list,color=[(state.time_to_go/max_T,1-state.time_to_go/max_T,0) for state in STATES[::-1]])
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
     ax1.set_title(title)
     plt.show()
     return plt
+
+
 
 def visualize_X_hull_eps(s,list_of_states,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):
     ax1 = plt.subplot(111)

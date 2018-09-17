@@ -31,16 +31,16 @@ class polytope:
     def __repr__(self):
         return "polytope in R^%d"%self.H.shape[1]
 
-def state_to_polytope(state_X,tol=10**-8):
+def state_to_polytope(state_X,method,tol=10**-4):
     """
     Input:
         a state in the system that is a paralleltope
     Output:
         polytope for the system
     """                  
-    return TQ_to_polytope(state_X.G,state_X.x,tol)
+    return TQ_to_polytope(state_X.G,state_X.x,method,tol)
     
-def TQ_to_polytope(T,d,tol=10**-8):
+def TQ_to_polytope(T,d,method,tol=10**-4):
     """
     Input:
         s: system
@@ -49,6 +49,13 @@ def TQ_to_polytope(T,d,tol=10**-8):
     Output:
         H-rep for TP+d, where P is the base polytope in s, P \in R^n
     """
+    if method=="eps":
+        (u,s,v)=svd(T)
+        T=np.dot(u,np.dot(np.diag(s+tol*(s<tol)),v))
+    elif method=="FM":
+        pass
+    else:
+        raise("Unknown method for projection")
     n=T.shape[0]
     (H,h)=project(T,d,PI(n),np.ones((2*n,1)))
     rank=rank_matrix(T)          

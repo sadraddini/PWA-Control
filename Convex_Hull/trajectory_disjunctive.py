@@ -26,8 +26,7 @@ from main.trajectory import subset_MILP
 
 def polytopic_trajectory_to_set_of_polytopes(s,x0,T,list_of_polytopes,eps=0,method="bigM",timelimit=60):
     (model,x,u,G,theta,z)=s.library[T]
-    n_vars=len(model.getVars())
-    n_constraints=len(model.getConstrs())
+    print("Initial: The number of variables is %d and # constraints is %d"%(len(model.getVars()),len(model.getConstrs()))) 
     J_area=LinExpr()
     d_min=model.addVar(lb=0.0001,name="new var")
     beta=10**2 # Weight of infinity norm
@@ -59,6 +58,7 @@ def polytopic_trajectory_to_set_of_polytopes(s,x0,T,list_of_polytopes,eps=0,meth
         model.addConstr(x[0][row,0]==x0[row,0]+x_delta[row])
     model.setParam('OutputFlag',True)
     model.setParam('TimeLimit', timelimit)
+    print("number of constraints is",len(model.getConstrs()),len(model.getGenConstrs()))
     # Terminal Constraint
     if method=="bigM":
         z_pol=terminal_constraint_set_bigM(s,x[T],G[T],model,list_of_polytopes)
@@ -67,6 +67,7 @@ def polytopic_trajectory_to_set_of_polytopes(s,x0,T,list_of_polytopes,eps=0,meth
     else:
         raise(method," was not recognized. Enter either 'big-M' or 'Convex_hull' as method")
     model.setObjective(J_area)
+    print("number of constraints is",len(model.getConstrs()),len(model.getGenConstrs()))
     model.optimize()
     if model.SolCount>0:
         flag=True
@@ -76,12 +77,12 @@ def polytopic_trajectory_to_set_of_polytopes(s,x0,T,list_of_polytopes,eps=0,meth
         G_n=valuation(G)
         theta_n=valuation(theta)
         z_n=mode_sequence(s,z)
-        if abs(np.linalg.det(G_n[0]))<10**-15:
-            flag=False
-        for polytope in list_of_polytopes:
-            if abs(z_pol[polytope].X-1)<=0.1:
-                state_end=polytope
-#                print(polytope,polytope.x.T,polytope.G)
+#        if abs(np.linalg.det(G_n[0]))<10**-15:
+#            flag=False
+        state_end_list=[y for y in list_of_polytopes if abs(z_pol[y].X-1)<0.1]
+        print(len(state_end_list))
+        assert (len(state_end_list)==1)
+        state_end=state_end_list[0]
         final=(x_n,u_n,G_n,theta_n,z_n,flag,state_end)
     elif model.Status!=2 and model.Status!=11:
         flag=False
@@ -89,23 +90,21 @@ def polytopic_trajectory_to_set_of_polytopes(s,x0,T,list_of_polytopes,eps=0,meth
         final=(x,u,G,theta,z,flag,s.goal)
     else:
         pass
-    print("starting removal process")
-    print("start=",n_vars,"variables and ",n_constraints," constraints")
-    new_n_vars=len(model.getVars())
-    new_n_constraints=len(model.getConstrs())
-    print("new:",new_n_vars,"variables and ",new_n_constraints," constraints")    
-    time_start=time()
-    for i in range(new_n_vars-n_vars):
-        model.remove(model.getVars()[-i-1])
-    model.update()
-    for i in range(new_n_constraints-n_constraints):
-        model.remove(model.getConstrs()[-i-1]) 
-    model.update()
-    n_vars=len(model.getVars())
-    n_constraints=len(model.getConstrs())
-    print("final:",n_vars,"variables and ",n_constraints," constraints")    
-    print("end of removal in ",time()-time_start," seconds")
+    print(model.getConstrByName("sadra%d"%T) in model.getConstrs(),model.getConstrByName("sadra%d"%T))    
+    remove_new_constraints(s,model,T)
+    print(model.getConstrByName("sadra%d"%T) in model.getConstrs(),model.getConstrByName("sadra%d"%T))    
     return final
+
+def remove_new_constraints(s,model,T):
+    print("After: The number of variables is %d and # constraints is %d"%(len(model.getVars()),len(model.getConstrs()))) 
+    for c in list(set(model.getConstrs()) - set(s.core_constraints[T])):
+        model.remove(c)
+    for v in list(set(model.getVars()) - set(s.core_Vars[T])):
+        model.remove(v)
+    model.update()
+    print("Last: The number of variables is %d and # constraints is %d"%(len(model.getVars()),len(model.getConstrs()))) 
+    
+        
 
 def terminal_constraint_set_bigM(s,x,G,model,list_of_polytopes):
     """
@@ -154,7 +153,7 @@ def terminal_constraint_convex_hull(s,x,G,model,list_of_states):
     Facts: Here we use H-rep. Therefore, G_eps is used!
     Everything is used with bigM
     """
-    print("Using Convex Hull")
+    print("Using Convex Hull Disjunctive Formulation with %d Number of Polytopes"%len(list_of_states))
     Lambda={}
     z_pol={}
     x_pol={}
@@ -211,67 +210,4 @@ def terminal_constraint_convex_hull(s,x,G,model,list_of_states):
     return z_pol
 
 
-def terminal_constraint_convex_hull_old(s,x,G,model,list_of_polytopes):
-    """
-    Facts: Here we use H-rep. Therefore, G_eps is used!
-    Everything is used with bigM
-    """
-    Lambda={}
-    (n,n_g)=G.shape
-    (n_p,n)=s.Pi.shape
-    (n_h,n)=(2*s.n,s.n)
-    z_pol={}
-    x_pol={}
-    G_pol={}
-    G_bound=100
-    for polytope in list_of_polytopes:
-        Lambda[polytope]=np.empty((n_h,n_p),dtype='object')
-        x_pol[polytope]=np.empty((n,1),dtype='object')
-        G_pol[polytope]=np.empty((n,n_g),dtype='object')
-        for row in range(n_h):
-            for column in range(n_p):
-                Lambda[polytope][row,column]=model.addVar(lb=0)
-        z_pol[polytope]=model.addVar(vtype=GRB.BINARY)
-        for row in range(n):
-            x_pol[polytope][row,0]=model.addVar(lb=-G_bound,ub=G_bound)
-        for row in range(n):
-            for column in range(n_g):
-                G_pol[polytope][row,column]=model.addVar(lb=-G_bound,ub=G_bound)                
-    model.update()
-    z_sum=LinExpr()
-    G_sum=np.empty((n,n_g),dtype='object')
-    x_sum=np.empty((n,1),dtype='object')
-    for row in range(n):
-        x_sum[row,0]=LinExpr()
-        for column in range(n):
-            G_sum[row,column]=LinExpr()
-    for polytope in list_of_polytopes:
-        z_sum.add(z_pol[polytope])
-        for row in range(n):
-            x_sum[row,0].add(x_pol[polytope][row,0])
-            for column in range(n_g):
-                G_sum[row,column].add(G_pol[polytope][row,column])        
-        for row in range(n_h):
-            for column in range(n_g):
-                s_left=LinExpr()
-                s_right=LinExpr()
-                for k in range(n_p):
-                    s_left.add(Lambda[polytope][row,k]*s.Pi[k,column])
-                for k in range(n):
-                    s_right.add(polytope.polytope.H[row,k]*G_pol[polytope][k,column])
-                model.addConstr(s_left==s_right)
-        for row in range(n_h):
-            s_left=LinExpr()
-            s_right=LinExpr()
-            for k in range(n_p):
-                s_left.add(Lambda[polytope][row,k])
-            for k in range(n):
-                s_right.add(polytope.polytope.H[row,k]*x_pol[polytope][k,0])
-            model.addConstr(s_left<=polytope.polytope.h[row,0]*z_pol[polytope]-s_right)
-    model.addConstr(z_sum==1)
-    for row in range(n):
-        model.addConstr(x_sum[row,0]==x[row,0])
-        for column in range(n_g):
-            model.addConstr(G_sum[row,column]==G[row,column])
-    return z_pol
     

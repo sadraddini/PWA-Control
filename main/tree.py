@@ -57,10 +57,13 @@ def extend_RRT(s,T,alpha_start=10**5,eps=0.1):
                     print("+"*80,"Connected to Tree","+"*80)
                     return True
                 
-def extend_RRT_MILP(s,T,eps=0.1,K=20):
+def extend_RRT_MILP(s,T,eps,K,x_sample_list):
     i=choice(s.modes)
     #x_sample=sample(s.l[i],s.u[i])
-    x_sample=sample_from_mode(s,i)
+    if x_sample_list==[]:
+        x_sample=sample_from_mode(s,i)
+    else:
+        x_sample=x_sample_list[0]
     array_tree(s)
     if inside_tree(s,x_sample)==True:
         print("inside X_tree")
@@ -75,18 +78,18 @@ def extend_RRT_MILP(s,T,eps=0.1,K=20):
             if flag==True:
                 if all_vertices_out_of_tree(s,x[0],G[0])==True:
                     make_state_trajectory_state_end(s,x,u,z,G,theta,T,state_end)
-                    print("+"*80,"Connected to Tree","+"*80)
+                    print("+"*80,"Connected to Tree, size=%d"%len(s.X),"+"*80)
                     return True
         
                 
-def Random_Tree_of_Polytopes(s,T_max=10,eps_max=1,method="MILP"):
+def Random_Tree_of_Polytopes(s,T_max=10,eps_max=1,method="MILP",x_sample_list=[]):
     for t in range(0,500):
         print("*"*100,"iteration",t)
         T=randint(1,T_max)
         if method=="one_by_one":
             flag=extend_RRT(s,T,alpha_start=-1,eps=random()*eps_max)
         elif method=="MILP":
-            flag=extend_RRT_MILP(s,T,eps=random()*eps_max,K=100)
+            flag=extend_RRT_MILP(s,T,eps=random()*eps_max,K=30,x_sample_list=[])
         else:
             raise(method, "is not one of known extend_RRT methods, try 'MILP' or 'one_by_one'")
         if flag==True:
