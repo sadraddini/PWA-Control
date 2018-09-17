@@ -1,6 +1,6 @@
 # Random Trees of Polytopes for Approximate Optimal Control of Piecewise Affine Systems
 ## Sadra Sadraddini and Russ Tedrake
-### MIT CSAIL, July 2018
+### [Robot Locomotion Group](http://groups.csail.mit.edu/locomotion/), MIT CSAIL
 
 ![Bouncing Ball](https://github.com/sadraddini/PWA-Control/raw/master/Examples/Bouncing_ball/figures/ball_iterations.gif)
 ![Inverted Pendulum With Wall](https://github.com/sadraddini/PWA-Control/raw/master/Examples/Inv_pendulum_wall/figures/inv_pendulum_wall_iterations.gif)
@@ -24,8 +24,8 @@ The full version (corrections made) is available [here](https://github.com/sadra
     * Bouncing ball 
     * Inverted pendulum with wall, Example 1 in [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
     * Inverted pendulum with two walls - one on each side
-    * 4-Mode system from Example 2 in [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
-    * Hybrid stabilization of Planar Pushing (*new*) ![Pushing](https://raw.githubusercontent.com/sadraddini/PWA-Control/master/Examples/pushing_box/figures/output_WayUmi.gif)
+    * Stablizing 4-cell PWA system: Example 2 in [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
+    * Hybrid stabilization of Planar Pushing (*new*) ![Pushing](https://raw.githubusercontent.com/sadraddini/PWA-Control/master/Examples/pushing_box/figures/pushing.gif)
 
 ### How to use guide:
 The user may use the following to formulate a PWA control problem and obtain a controller. The following guide is the general picture, and it does not include minor details. The reader is encouraged to check the examples. 
@@ -47,4 +47,4 @@ Current version only supports visualization for 2D problems. For higher dimensio
 ### Contact us
 If you have any questions regarding this work, or you are willing to contribute, please contact [Sadra Sadraddini](sadra@mit.edu) 
 
-Last updated on Sep 10, 2018. 
+Last updated on Sep 17, 2018. 
