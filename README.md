@@ -14,8 +14,7 @@ The idea is conceptually similar to LQR-trees [Tedrake et. al. (2010)](https://g
 The full version (corrections made) is available [here](https://github.com/sadraddini/PWA-Control/blob/master/paper.pdf)
 
 ### Dependencies:
-* Python 2.7 or later (*recommended*: Python 3.6 or later)
-* [Gurobi](http://www.gurobi.com/) Version 7.0 or later
+* [Gurobi](http://www.gurobi.com/) Version 7.0 or later. Free Academic use.
 
 ### Folder Descriptions
 * Main: source code of methods
