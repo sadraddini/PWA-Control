@@ -33,11 +33,15 @@ for T in range(1,Tmax+1):
 intitialize_tree(s,T=Tmax ,alpha_start=0)
 visualize_set_tube(s.X,-0.12,0.12,-1,1,tube_size=0.001)
 
-Random_Tree_of_Polytopes(s,T_max=Tmax,eps_max=0)
+Random_Tree_of_Polytopes(s,T_max=Tmax,eps_max=0.1)
     
-visualize_X_eps_time(s,-0.12,0.12,-1,1,"angle","angular velocity","steps-to-go")
-visualize_X_time_hull_eps(s,-0.12,0.12,-1,1,"angle","angular velocity","steps-to-go")
+visualize_X_eps_time(s,-0.12,0.12,-1,1,r"$\theta$",r"$\dot{\theta}$","time_optimal")
+visualize_X_time_hull_eps(s,-0.12,0.12,-1,1,r"$\theta$",r"$\dot{\theta}$","time_optimal")
 
-def animate(d):
-    return visualize_subset_tree(s,d,-0.12,0.12,-1,1,"angle","angular velocity")
+#def animate(d):
+#    return visualize_subset_tree(s,d,-0.12,0.12,-1,1,"angle","angular velocity")
 #visualize_subset_tree(s,10,-0.12,0.12,-1,1)
+
+f=open('saved.pkl','w')
+pickle(s,f)
+f.close()

@@ -54,8 +54,8 @@ def visualize_proj_eps_states(list_of_states,di,dj,xmin=-1,xmax=1,ymin=-1,ymax=1
     """
     ax1 = plt.subplot(111)
     plt.figure(figsize=(20,20),dpi=80, facecolor='w', edgecolor='k')
-    ax1.set_xlabel(xlabel)
-    ax1.set_ylabel(ylabel)
+    ax1.set_xlabel(xlabel,fontsize=20)
+    ax1.set_ylabel(ylabel,fontsize=20)
     ax1.set_xlim([xmin,xmax])
     ax1.set_ylim([ymin,ymax])
     n=list_of_states[0].x.shape[0]
@@ -70,7 +70,7 @@ def visualize_proj_eps_states(list_of_states,di,dj,xmin=-1,xmax=1,ymin=-1,ymax=1
     p=PatchCollection(p_list,color=(0.4,0.4,0.3))
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
-    ax1.set_title(title)
+    ax1.set_title(title,fontsize=20)
     return plt
 
 def visualize_proj_eps_states_simulation(s,di,dj,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabel='x_2',title="interesting plot"):

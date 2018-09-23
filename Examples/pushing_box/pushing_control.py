@@ -13,7 +13,7 @@ from main.trajectory import state_trajectory
 from main.tree_locator import inside_tree,array_tree
 from main.auxilary_methods import sample
 from main.visualization import visualize_subset_tree,visualize_set_tube_simulation
-from main.simulate import simulate_vanilla,simulate_convex
+from main.simulate import simulate_vanilla,simulate_convex,simulate_MPC
 from main.visualization_high import visualize_proj_eps,visualize_proj_eps_states_simulation,visualize_proj_eps_states
 
 #visualize_proj_eps(s,0,1,xmin=0,xmax=10,ymin=-1,ymax=1,xlabel='x',ylabel='y',title="planar pushing")

@@ -59,7 +59,7 @@ def visualize_set_tube_simulation(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',y
     trajectory=np.array(s.traj)
     ax1.plot(trajectory[:,0,:],trajectory[:,1,:],'r',linewidth=0.5)
     ax1.plot(trajectory[:,0,:],trajectory[:,1,:],'ro')
-    ax1.plot([0.1,0.1],[-1,1],'black')
+    #ax1.plot([0.1,0.1],[-1,1],'black')
     plt.show()
     
 
@@ -141,7 +141,7 @@ def visualize_X_time_hull_eps(s,xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel='x_1',ylabe
     ax1.add_collection(p)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
     ax1.set_title(title)
-    ax1.plot([0.1,0.1],[-1,1],'black')
+    #ax1.plot([0.1,0.1],[-1,1],'black')
     plt.show()
     return plt
 
