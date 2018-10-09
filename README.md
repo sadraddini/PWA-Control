@@ -10,8 +10,8 @@ Piecewise affine (PWA) systems are widely used to model highly nonlinear behavio
 In this paper, we introduce a method to obtain feedback control policies and a corresponding  set of admissible initial conditions for discrete-time PWA systems such that all the closed-loop trajectories reach a goal polytope, while a cost function is optimized. 
 The idea is conceptually similar to LQR-trees [Tedrake et. al. (2010)](https://groups.csail.mit.edu/robotics-center/public_papers/Tedrake10.pdf), which consists of 3 steps: (1) open-loop trajectory optimization, (2) feedback control for computation of "funnels" of states around trajectories, and (3) repeating (1) and (2) in a way that the funnels are grown backward from the goal in a tree fashion and fill the state-space as much as possible. We show PWA dynamics can be exploited to combine step (1) and (2) into a single step that is tackled using mixed-integer convex programming, which makes the method more suitable for dealing with hard constraints. Illustrative examples on contact-based dynamics are presented. 
 
-### Paper
-The full version (corrections made) is available [here](https://github.com/sadraddini/PWA-Control/blob/master/paper.pdf)
+### ArXiv Paper
+The extnded version (corrections made) is made available in [ArXiv](https://arxiv.org/pdf/1809.09716.pdf)
 
 ### Dependencies:
 * [Gurobi](http://www.gurobi.com/) Version 7.0 or later. Free Academic use.
@@ -44,6 +44,6 @@ So far, we have only considered cases where PWA cells are constructed in state s
 Current version only supports visualization for 2D problems. For higher dimensions, projections to 2D are performed. See examples. 
 
 ### Contact us
-If you have any questions regarding this work, or you are willing to contribute, please contact [Sadra Sadraddini](sadra@mit.edu) 
+If you have any questions regarding this work, or you are willing to contribute, please contact [Sadra Sadraddini](mailto:sadra@mit.edu) 
 
 Last updated on Sep 17, 2018. 
