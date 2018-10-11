@@ -11,7 +11,10 @@ In this paper, we introduce a method to obtain feedback control policies and a c
 The idea is conceptually similar to LQR-trees [Tedrake et. al. (2010)](https://groups.csail.mit.edu/robotics-center/public_papers/Tedrake10.pdf), which consists of 3 steps: (1) open-loop trajectory optimization, (2) feedback control for computation of "funnels" of states around trajectories, and (3) repeating (1) and (2) in a way that the funnels are grown backward from the goal in a tree fashion and fill the state-space as much as possible. We show PWA dynamics can be exploited to combine step (1) and (2) into a single step that is tackled using mixed-integer convex programming, which makes the method more suitable for dealing with hard constraints. Illustrative examples on contact-based dynamics are presented. 
 
 ### ArXiv Paper
-The extnded version (corrections made) is made available in [ArXiv](https://arxiv.org/pdf/1809.09716.pdf)
+The extended version (corrections made) is made available in [ArXiv](https://arxiv.org/pdf/1809.09716.pdf)
+
+Also check the video below that summarizes the method.
+[![](http://img.youtube.com/vi/gGH0EuIzkgY/0.jpg)](http://www.youtube.com/watch?v=gGH0EuIzkgY "Polytopic Trees")
 
 ### Dependencies:
 * [Gurobi](http://www.gurobi.com/) Version 7.0 or later. Free Academic use.
@@ -21,10 +24,13 @@ The extnded version (corrections made) is made available in [ArXiv](https://arxi
 * Convex_Hull (*new*): methods related to disjuctive programming for faster tree extention 
 * Examples: 
     * Bouncing ball 
-    * Inverted pendulum with wall, Example 1 in [paper](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
+    * Inverted pendulum with wall, Example 1 in [Marcucci et al. 2017](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
     * Inverted pendulum with two walls - one on each side
-    * Stablizing 4-cell PWA system: Example 2 in [paper](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
-    * Hybrid stabilization of Planar Pushing (*new*) ![Pushing](https://raw.githubusercontent.com/sadraddini/PWA-Control/master/Examples/pushing_box/figures/pushing.gif)
+    * Stablizing 4-cell PWA system: Example 2 in [Rakovic et al. 2004](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
+    * Hybrid stabilization of Planar Pushing ![Pushing](https://raw.githubusercontent.com/sadraddini/PWA-Control/master/Examples/pushing_box/figures/pushing.gif)
+    * Box flipping (*Under Progress*)
+    * Autonomous Intersection (*Under Progress*)
+    
 
 ### How to use guide:
 The user may use the following to formulate a PWA control problem and obtain a controller. The following guide is the general picture, and it does not include minor details. The reader is encouraged to check the examples. 
@@ -46,4 +52,4 @@ Current version only supports visualization for 2D problems. For higher dimensio
 ### Contact us
 If you have any questions regarding this work, or you are willing to contribute, please contact [Sadra Sadraddini](mailto:sadra@mit.edu) 
 
-Last updated on Sep 17, 2018. 
+Last updated on Oct 10, 2018. 
