@@ -14,6 +14,8 @@ from random import choice as rchoice
 
 from main.auxilary_methods import vertices_cube
 from main.state import state
+
+import pickle
     
 class system:
     def __init__(self,n=1,m=1,name="PWA System"):
@@ -52,6 +54,13 @@ class system:
         
     def __repr__(self):
         return self.name+" with "+str(len(self.modes))+" modes"
+
+def save_system_pickle(s):
+    f=open(s.name,'w')
+    g=system(s.n,s.m)
+    g.X=s.X
+    pickle.dump(g,f)
+    f.close()    
     
 def states_time_order(s):
     indices=list(np.argsort(np.array([x.time_to_go for x in s.X])))

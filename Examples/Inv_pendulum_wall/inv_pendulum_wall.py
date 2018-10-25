@@ -17,7 +17,7 @@ from main.polytope import polytope,anchor_point
 
 
 
-s=system(2,1)
+s=system(2,1,name="inverted pendulum with wall")
 s.modes=[0,1]
 
 s.A[0]=np.array([[1,0.01],[0.1,1]])
@@ -42,13 +42,6 @@ s.F[1]=np.array([[1,-1]]).T
 s.f[1]=np.array([[4,4]]).T
 
 s.Pi=np.array([[1,0],[0,1],[-1,0],[0,-1]])
-
-s.l[0]=np.array([-0.12,-1]).reshape(2,1)
-s.u[0]=np.array([0.1,1]).reshape(2,1)
-
-s.l[1]=np.array([0.1,-1]).reshape(2,1)
-s.u[1]=np.array([0.12,1]).reshape(2,1)
-
 s.vertices=vertices_cube(2)
 
 """
