@@ -29,7 +29,7 @@ Also check the video below that summarizes the method.
     * Inverted pendulum with wall, Example 1 in [Marcucci et al. 2017](http://groups.csail.mit.edu/robotics-center/public_papers/Marcucci17.pdf)
     * Inverted pendulum with two walls - one on each side
     * Stablizing 4-cell PWA system: Example 2 in [Rakovic et al. 2004](https://www.researchgate.net/profile/Michal_Kvasnica/publication/4143171_Computation_of_invariant_sets_for_piecewise_affine_discrete_time_systems_subject_to_bounded_disturbances/links/54d0b5930cf298d65668244c/Computation-of-invariant-sets-for-piecewise-affine-discrete-time-systems-subject-to-bounded-disturbances.pdf)
-    * Hybrid stabilization of Planar Pushing ![Pushing](pushing_labeled.mp4)
+    * Hybrid stabilization of Planar Pushing ![](pushing_labeled.gif "Pushing!")
     * Box flipping (*Under Progress*)
     * Autonomous Intersection (*Under Progress*)
     
