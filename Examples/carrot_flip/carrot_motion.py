@@ -8,11 +8,13 @@ Created on Fri Nov  2 07:56:45 2018
 from carrot import *
 
 
-if True:
+if False:
     X=np.array([0,3,0.0,0,0,0,2.5,1,7,1.57])
     U=np.zeros(4)
     T=500
     X_traj=np.zeros((10,T))
+    U_traj=np.zeros((4,T))
+    gripper_traj=np.zeros(T)
     alpha=0.17
     for t in range(T):
         gripper="on"
@@ -40,15 +42,30 @@ if True:
                 else:
                     U[2]=5
         if theta>1.6:
-            U=np.array([-15,2,10,-2])
-        if theta>3.2:
-            gripper="off"
-        X=evolve_carrot(X,U,gripper)
+            U=np.array([-40,40,40,-10*(psi)])
+        if theta>2.0:
+            gripper=0
+        else:
+            gripper=1
         X_traj[:,t]=X
+        U_traj[:,t]=U  
+        gripper_traj[t]=gripper
+        X=evolve_carrot(X,U,gripper)
         print(t,X.T,"\n")
-        visualize(X,U,gripper)
+        #visualize(X,U,gripper)
 
-plt.plot(X_traj[8,:]-R-X_traj[6,:]*np.sin(X_traj[9,:])-X_traj[7,:]*np.cos(X_traj[9,:]))
+if True: # Open-loop
+    T=500
+    X=np.array([0,3,0.9,0,0,0,2.5,1,7,1.57])
+    X_traj_new=np.zeros((10,T))
+    for t in range(T):
+        X_traj_new[:,t]=X
+        U=U_traj[:,t]
+        gripper=gripper_traj[t]
+        X=evolve_carrot(X,U,gripper)
+        visualize(X,U,gripper)    
+    e=X_traj-X_traj_new
+    plt.plot(range(T),e.T)
 
 if False:
     X=np.array([0,3,0,0,0,0,2.5,1,7,1.57])

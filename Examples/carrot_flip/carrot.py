@@ -34,7 +34,7 @@ h=0.01 # Time step
 p=4*R/(3*np.pi) # Center of mass distance from O
 I=40 # Moment of Inerita
 
-def evolve_carrot(X,U,gripper="on"):
+def evolve_carrot(X,U,gripper):
     x,y,theta,x_dot,y_dot,theta_dot=X[0:6]
     X_new=np.empty(10)
     X_new[0]=x+x_dot*h
@@ -57,7 +57,7 @@ def evolve_carrot(X,U,gripper="on"):
     return X_new
 
 
-def carrot_forces(X,U,gripper="on"):
+def carrot_forces(X,U,gripper=1):
     f_g=np.array([0,-g,0])
     f_ground=carrot_forces_ground(X)
     f_left=left_finger_force(X,U)
@@ -65,9 +65,9 @@ def carrot_forces(X,U,gripper="on"):
     print "ground force:",f_ground
     print "left finger force:",f_left
     print "right finger force:",f_right
-    if gripper=="on":
+    if gripper==1:
         return f_ground+f_g+f_left+f_right
-    else:
+    elif gripper==0:
         return f_ground+f_g
     
 
@@ -160,36 +160,11 @@ def right_finger_force(X,U):
     f_theta=f_n*p*np.sin(psi)+f_t*(R-p)*np.cos(psi)
     return np.array([fx,fy,f_theta])    
 
-def left_finger_force_old(X,U):
-    x,y,theta,x_dot,y_dot,theta_dot=X[0:6]
-    x_left,y_left=X[6:8]
-    vx_left,vy_left=U[0:2]
-    phi=np.arctan2(y_left-y,x-x_left)
-    d_center=np.sqrt((y_left-y)**2+(x-x_left)**2)
-    d=d_center*np.sin(phi+theta) #penetration
-    c=d_center*np.cos(phi+theta) #penetration
-    v_d_center=1/d_center*((x_left-x)*(vx_left-x_dot)+(y_left-y)*(vy_left-y_dot))
-    phi_dot=(x-x_left)/(y_left-y)*((vy_left-y_dot)*(x-x_left)-(x_dot-vx_left)*(y_left-y))/d_center**2
-    v_d=v_d_center*np.sin(phi+theta)+d_center*np.cos(phi+theta)*(theta_dot+phi_dot)
-    c_dot=v_d_center*np.cos(phi+theta)-d_center*np.sin(phi+theta)*(theta_dot+phi_dot)
-    # Forces: normal and tan
-    if d>=0:
-        f_n=0
-        f_t=0
-    elif d<0:
-        f_n=-K_finger*d-c_finger*v_d
-        f_t=-f_n*mu_finger*np.sign(c_dot)
-    fy=-f_n*np.cos(theta)+f_t*np.sin(theta)
-    fx=-f_t*np.sin(theta)-f_n*np.cos(theta)
-    f_theta=-f_t*p+f_n*c
-    print "moment of finger",f_theta
-    return np.array([fx,fy,f_theta])
-
 
 """
 Visualization Tools
 """    
-def visualize(X,U,gripper="on"):
+def visualize(X,U,gripper=1):
     fig,ax1 = plt.subplots()
     ax1.set_xlabel("x",fontsize=20)
     ax1.set_ylabel("y",fontsize=20)
@@ -205,7 +180,7 @@ def visualize(X,U,gripper="on"):
     ax1.set_title("carrot %d"%t)
     ax1.plot([-12,12],[0,0],'black')
     center_mass(ax1,X)
-    if gripper=="on":
+    if gripper==1:
         # left Finger position
         finger_left(ax1,X)
         # Right finger
