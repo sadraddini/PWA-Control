@@ -11,10 +11,10 @@ import matplotlib.patches as patches
 from matplotlib.collections import PatchCollection
 
 
-R=3 # Carrot radius
+R=3.0 # Carrot radius
 g=9.8 # Gravity
 mu_ground=0.4
-mu_finger=0.6
+mu_finger=0.2
 
 K_ground=400
 c_ground=150
@@ -32,7 +32,7 @@ global t
 
 h=0.01 # Time step
 p=4*R/(3*np.pi) # Center of mass distance from O
-I=40 # Moment of Inerita
+I=30 # Moment of Inerita
 
 def evolve_carrot(X,U,gripper):
     x,y,theta,x_dot,y_dot,theta_dot=X[0:6]

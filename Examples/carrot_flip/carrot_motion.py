@@ -8,7 +8,7 @@ Created on Fri Nov  2 07:56:45 2018
 from carrot import *
 
 
-if False:
+if True:
     X=np.array([0,3,0.0,0,0,0,2.5,1,7,1.57])
     U=np.zeros(4)
     T=500
@@ -56,7 +56,7 @@ if False:
 
 if True: # Open-loop
     T=500
-    X=np.array([0,3,0.9,0,0,0,2.5,1,7,1.57])
+    X=np.array([0,3,0,0,0,0,2.5,1,7,1.57])
     X_traj_new=np.zeros((10,T))
     for t in range(T):
         X_traj_new[:,t]=X
