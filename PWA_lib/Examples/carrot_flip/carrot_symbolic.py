@@ -8,34 +8,34 @@ Created on Mon Nov  5 11:33:29 2018
 from sympy import Symbol,pi,sin,cos
 import numpy as np
 
-x=Symbol('x')
-y=Symbol('y')
-theta=Symbol('theta')
-x_dot=Symbol('x_dot')
-y_dot=Symbol('y_dot')
-theta_dot=Symbol('theta_dot')
-c=Symbol('c')
-d=Symbol('d')
-D=Symbol('D')
-psi=Symbol('psi')
-
-v_c=Symbol('v_c')
-v_d=Symbol('v_d')
-v_D=Symbol('v_D')
-v_psi=Symbol('v_psi')
-
-R=Symbol('R')
-K_ground=Symbol('K_ground')
-c_ground=Symbol('c_ground')
-mu_ground=Symbol('mu_ground')
-K_finger=Symbol('K_finger')
-c_finger=Symbol('c_finger')
-mu_finger=Symbol('mu_finger')
-p=4*R/(3*pi)
-
-# Mode 1: Carrot cylinder side down, no finger
-X=np.array([x,y,theta,x_dot,y_dot,theta_dot,c,d,D,psi])
-U=np.array([v_c,v_d,v_D,v_psi])
+#x=Symbol('x')
+#y=Symbol('y')
+#theta=Symbol('theta')
+#x_dot=Symbol('x_dot')
+#y_dot=Symbol('y_dot')
+#theta_dot=Symbol('theta_dot')
+#c=Symbol('c')
+#d=Symbol('d')
+#D=Symbol('D')
+#psi=Symbol('psi')
+#
+#v_c=Symbol('v_c')
+#v_d=Symbol('v_d')
+#v_D=Symbol('v_D')
+#v_psi=Symbol('v_psi')
+#
+#R=Symbol('R')
+#K_ground=Symbol('K_ground')
+#c_ground=Symbol('c_ground')
+#mu_ground=Symbol('mu_ground')
+#K_finger=Symbol('K_finger')
+#c_finger=Symbol('c_finger')
+#mu_finger=Symbol('mu_finger')
+#p=4*R/(3*pi)
+#
+## Mode 1: Carrot cylinder side down, no finger
+#X=np.array([x,y,theta,x_dot,y_dot,theta_dot,c,d,D,psi])
+#U=np.array([v_c,v_d,v_D,v_psi])
 
 def carrot_ground_down_slide_left(X):
     x,y,theta,x_dot,y_dot,theta_dot=X[0:6]
@@ -81,7 +81,7 @@ def left_finger_force_slide_right(X,U):
     fy=-f_n*cos(theta)+f_t*sin(theta)
     fx=f_t*cos(theta)+f_n*sin(theta)
     f_theta=-f_t*p+f_n*c
-    return np.array([fx,fy,f_theta]) 
+    return np.array([fx,fy,f_theta])
 
 def right_finger_force_right(X,U):
     # v_slide>0

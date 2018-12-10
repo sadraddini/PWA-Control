@@ -52,9 +52,9 @@ if True:
         gripper_traj[t]=gripper
         X=evolve_carrot(X,U,gripper)
         print(t,X.T,"\n")
-        #visualize(X,U,gripper)
+#        visualize(X,U,gripper)
 
-if True: # Open-loop
+if False: # Open-loop
     T=500
     X=np.array([0,3,0,0,0,0,2.5,1,7,1.57])
     X_traj_new=np.zeros((10,T))

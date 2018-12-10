@@ -142,7 +142,8 @@ def right_finger_force(X,U):
 #    v_penetration=x_dot*np.sin(psi+theta)-y_dot*np.cos(theta+psi)-v_d*np.cos(psi)+v_c*np.sin(psi)-v_D
 #    v_slide=x_dot*np.cos(psi+theta)+y_dot*np.sin(theta+psi)+v_d*np.sin(psi)+v_c*np.cos(psi)
     v_penetration=-v_d*np.cos(psi)-v_c*np.sin(psi)+v_D # Positive: going out
-    v_slide=v_d*np.sin(psi)-v_c*np.cos(psi)
+    v_slide=v_d*np.sin(psi)-v_c*np.cos(psi)+R*theta_dot
+    
     # Now let's find the amount of penetration
     d=D-R-c*np.sin(psi)-d*np.cos(psi)
     print "right finger penertation:",d
