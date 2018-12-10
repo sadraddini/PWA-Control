@@ -2,8 +2,8 @@
 ## Sadra Sadraddini and Russ Tedrake
 ### [Robot Locomotion Group](http://groups.csail.mit.edu/locomotion/), MIT CSAIL
 
-![Bouncing Ball](https://github.com/sadraddini/PWA-Control/raw/master/Examples/Bouncing_ball/figures/ball_iterations.gif)
-![Inverted Pendulum With Wall](https://github.com/sadraddini/PWA-Control/raw/master/Examples/Inv_pendulum_wall/figures/inv_pendulum_wall_iterations.gif)
+![Bouncing Ball](https://github.com/sadraddini/PWA-Control/raw/master/PWA_lib/Examples/Bouncing_ball/figures/ball_iterations.gif)
+![Inverted Pendulum With Wall](https://github.com/sadraddini/PWA-Control/raw/master/PWA_lib/Examples/Inv_pendulum_wall/figures/inv_pendulum_wall_iterations.gif)
 
 ### Abstract
 Piecewise affine (PWA) systems are widely used to model highly nonlinear behaviors such as contact dynamics in robot locomotion and manipulation. Existing control techniques for PWA systems have computational drawbacks, both in offline design and online implementation. 
@@ -116,4 +116,4 @@ Current version only supports visualization for 2D problems. For higher dimensio
 ### Contact us
 If you have any questions regarding this work, or you are willing to contribute, please contact [Sadra Sadraddini](mailto:sadra@mit.edu) 
 
-Last updated on Nov 6, 2018.
+Last updated on Dec 10, 2018.
