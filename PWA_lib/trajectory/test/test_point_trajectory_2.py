@@ -41,9 +41,15 @@ sys.B[2,1]=np.array([[0,0]]).T
 sys.c[2,1]=np.array([[0,-1]]).T
 
 H=np.array([[1,0,0],[0,1,0],[-1,0,0],[0,-1,0],[0,0,1],[0,0,-1]])
-h=np.array([[0.1,1,0.12,1,4,4]]).T   
+h=np.array([[0.12,1,0.12,1,4,4]]).T   
 sys.C[0,0]=polytope(H,h)
+
+H=np.array([[1,0,0],[0,1,0],[-1,0,0],[0,-1,0],[0,0,1],[0,0,-1]])
+h=np.array([[0.1,1,0.12,1,4,4]]).T 
 sys.C[1,0]=polytope(H,h)
+
+H=np.array([[1,0,0],[0,1,0],[-1,0,0],[0,-1,0],[0,0,1],[0,0,-1]])
+h=np.array([[0.12,1,0.1,1,4,4]]).T 
 sys.C[2,0]=polytope(H,h)
 
 H=np.array([[1,0,0],[0,1,0],[-1,0,0],[0,-1,0],[0,0,1],[0,0,-1]])
@@ -54,7 +60,7 @@ H=np.array([[1,0,0],[0,1,0],[-1,0,0],[0,-1,0],[0,0,1],[0,0,-1]])
 h=np.array([[-0.1,1,0.12,1,4,4]]).T  
 sys.C[2,1]=polytope(H,h)
 
-sys.goal=zonotope(np.array([0,0]).reshape(2,1),np.array([[0.0,0],[0,0.0]]))
+sys.goal=zonotope(np.array([0,0.99]).reshape(2,1),np.array([[0,0],[0,0]]))
 
 sys.n=2
 sys.m=1
@@ -69,8 +75,8 @@ sys.build()
 
 import matplotlib.pyplot as plt
 
-x0=np.array([0.0,0.69]).reshape(2,1)
-T=50
+x0=np.array([0.0,0.99]).reshape(2,1)
+T=70
 (x,u,delta_PWA,mu)=point_trajectory(sys,x0,[sys.goal],T)
 
 plt.plot([x[t][0,0] for t in range(T+1)],[x[t][1,0] for t in range(T+1)])

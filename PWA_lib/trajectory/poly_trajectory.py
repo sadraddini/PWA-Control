@@ -31,17 +31,19 @@ def point_trajectory(system,x0,list_of_goals,T,eps=[None]):
     u=model.addVars(range(T),range(system.m),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u")
     ##
     x_PWA=model.addVars([(t,n,i,j) for t in range(T+1) for n in system.list_of_sum_indices \
-        for i in system.list_of_modes[n] for j in range(system.n)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x_pwa")
+                         for i in system.list_of_modes[n] for j in range(system.n)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x_pwa")
     u_PWA=model.addVars([(t,n,i,j) for t in range(T) for n in system.list_of_sum_indices \
-        for i in system.list_of_modes[n] for j in range(system.m)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_pwa")
+                         for i in system.list_of_modes[n] for j in range(system.m)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_pwa")
     delta_PWA=model.addVars([(t,n,i) for t in range(T) for n in system.list_of_sum_indices \
-    for i in system.list_of_modes[n]],vtype=GRB.BINARY,name="delta_pwa")
+                             for i in system.list_of_modes[n]],vtype=GRB.BINARY,name="delta_pwa")
     model.update()
     # Initial Condition
     add_initial_condition(system,model,x,x0,eps)
     # Convexhull Dynamics
-    model.addConstrs(x[t,j]==x_PWA.sum(t,"*","*",j) for t in range(T+1) for j in range(system.n))
-    model.addConstrs(u[t,j]==u_PWA.sum(t,"*","*",j) for t in range(T) for j in range(system.m))
+    model.addConstrs(x[t,j]==x_PWA.sum(t,n,"*",j) for t in range(T+1) for j in range(system.n)\
+                     for n in system.list_of_sum_indices)
+    model.addConstrs(u[t,j]==u_PWA.sum(t,n,"*",j) for t in range(T) for j in range(system.m)\
+                     for n in system.list_of_sum_indices)
     for t in range(T):
         for n in system.list_of_sum_indices:
             for i in system.list_of_modes[n]:
@@ -92,6 +94,10 @@ def point_trajectory(system,x0,list_of_goals,T,eps=[None]):
                 delta_PWA_num[t,n,i]=delta_PWA[t,n,i].X
     for goal in list_of_goals:
         mu_num[goal]=mu[goal].X
+#    for key,val in x_PWA.items():
+#        print key,val.X
+#    for key,val in u_PWA.items():
+#        print key,val.X        
     return (x_num,u_num,delta_PWA_num,mu_num)
 
 
