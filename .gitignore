@@ -64,3 +64,5 @@ target/
 *.pkl
 
 *.mp4
+
+PWA_lib/trajectory/test/sadra\.lp
