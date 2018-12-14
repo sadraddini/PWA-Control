@@ -8,10 +8,10 @@ Created on Fri Nov  2 07:56:45 2018
 from carrot import *
 
 
-if True:
+if False:
     X=np.array([0,3,0.0,0,0,0,2.5,1,7,1.57])
     U=np.zeros(4)
-    T=500
+    T=150
     X_traj=np.zeros((10,T))
     U_traj=np.zeros((4,T))
     gripper_traj=np.zeros(T)
@@ -52,7 +52,61 @@ if True:
         gripper_traj[t]=gripper
         X=evolve_carrot(X,U,gripper)
         print(t,X.T,"\n")
-#        visualize(X,U,gripper)
+        visualize(X,U,gripper)
+        
+else:
+    X=np.array([0,3,0.0,0,0,0,2.5,1,7,1.57])
+    U=np.zeros(4)
+    T=700
+    X_traj=np.zeros((10,T))
+    U_traj=np.zeros((4,T))
+    gripper_traj=np.zeros(T)
+    alpha=0.017/1.0
+    beta=0.019/1.0
+    for t in range(T):
+        gripper="on"
+        x,y,theta,x_dot,y_dot,theta_dot,c,d,D,psi=X[0:10]
+        d=D-R-c*np.sin(psi)-d*np.cos(psi)
+        U=np.array([0.0,-3,0.0,0.0])
+        if X[7]<=-0*alpha:
+            U[3]=-1.0+0.3*(theta>1)
+        if X[7]<=alpha:
+            U[1]=(-alpha-X[7])/h # Left finger guard
+        if X[7]<0 and c>-0.1:
+            U[0]=-1.8
+        if psi<-0.01: # Psi guard
+            U[3]=0
+            U[2]=-8
+        if d<=beta: # right finger penetration guard
+            U[2]=(-beta-d)/h
+        elif X[7]<=0:
+            U[2]=-6
+        if y>3.2: # Pickup! Go to right!
+            U[0]=0
+            if x>=0:
+                if d>=-0.1*alpha:
+                    U[2]=-5
+                else:
+                    U[2]=5
+        if theta>1.6:
+            U=np.array([-40,40,20,-10*(psi)])
+        if theta>2.6:
+            gripper=0
+        else:
+            gripper=1
+        X_traj[:,t]=X
+        U_traj[:,t]=U  
+        gripper_traj[t]=gripper
+        X=evolve_carrot(X,U,gripper)
+        print(t,X.T,"\n")
+        if False:
+            visualize(X,U,gripper)
+        else:
+            visualize_funnel(X,U,gripper)
+
+d_right=X_traj[8,:]-R-X_traj[6,:]*np.sin(X_traj[9,:])-X_traj[7,:]*np.cos(X_traj[9,:])
+plt.plot(d_right[0:])
+plt.plot(X_traj[0,:],X_traj[1,:])
 
 if False: # Open-loop
     T=500
@@ -147,7 +201,8 @@ if False:
         X=evolve_carrot(X,U,gripper)
         X_traj[:,t]=X
         print(t,X.T,"\n")
-        visualize(X,U,gripper)
+
+        
         
 if False:
     T2=300

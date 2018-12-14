@@ -27,3 +27,11 @@ class system:
 #        for n in self.list_of_sum_indices for i in self.list_of_modes[n]
 #        for j in range(self.C[n,i].H.shape[0]) for k in range(self.n)}
         pass
+    
+
+class linear_cell:
+    def __init__(self,A,B,c,p):
+        self.A=A
+        self.B=B
+        self.c=c
+        self.p=p

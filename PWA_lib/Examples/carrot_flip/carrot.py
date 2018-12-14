@@ -10,29 +10,33 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.collections import PatchCollection
 
+from PWA_lib.visualization.visualize import add_tube
+
 
 R=3.0 # Carrot radius
 g=9.8 # Gravity
-mu_ground=0.4
-mu_finger=0.2
+mu_ground=0.3
+mu_finger=0.5
 
-K_ground=400
-c_ground=150
+K_ground=800/2
+c_ground=150/2
 K_finger=700
-c_finger=10
+c_finger=10*0
 
 K_torsion=5000
 c_torsion=100
-K_torsion_ground=1000
-c_torsion_ground=100
-
+#K_torsion_ground=1000
+#c_torsion_ground=100
+K_torsion_ground=1000/1
+c_torsion_ground=100/1
 t=0
 global t
 
 
-h=0.01 # Time step
+h=0.0025 # Time step
 p=4*R/(3*np.pi) # Center of mass distance from O
-I=30 # Moment of Inerita
+#I=30
+I=1/6.0*R**2 # Moment of Inerita
 
 def evolve_carrot(X,U,gripper):
     x,y,theta,x_dot,y_dot,theta_dot=X[0:6]
@@ -181,6 +185,50 @@ def visualize(X,U,gripper=1):
     ax1.set_title("carrot %d"%t)
     ax1.plot([-12,12],[0,0],'black')
     center_mass(ax1,X)
+    if gripper==1:
+        # left Finger position
+        finger_left(ax1,X)
+        # Right finger
+        finger_right(ax1,X)
+    global t
+    t=t+1
+    fig.savefig('carrot_fig/carrot_%d.png'%t, dpi=100)
+    plt.close()
+    return fig
+
+import pickle
+x_funnel_1=pickle.load(open("x_funnel_1.pkl","r"))
+x_funnel_2=pickle.load(open("x_funnel_2.pkl","r"))
+x_funnel_3=pickle.load(open("x_funnel_3.pkl","r"))
+x_funnel_4=pickle.load(open("x_funnel_4.pkl","r"))
+G_funnel_1=pickle.load(open("G_funnel_1.pkl","r"))
+G_funnel_2=pickle.load(open("G_funnel_2.pkl","r"))
+G_funnel_3=pickle.load(open("G_funnel_3.pkl","r"))
+G_funnel_4=pickle.load(open("G_funnel_4.pkl","r"))   
+ 
+def visualize_funnel(X,U,gripper=1):
+    fig,ax1 = plt.subplots()
+    ax1.set_xlabel("x",fontsize=20)
+    ax1.set_ylabel("y",fontsize=20)
+    ax1.set_xlim([-12,12])
+    ax1.set_ylim([-2,10])
+    fig.gca().set_aspect('equal')
+    p_list=[]
+    v=vertices(X)
+    p_list.append(patches.Polygon(v, True))
+    p=PatchCollection(p_list,color=(1,0,0),alpha=0.31,edgecolor=(1,0,0))
+    ax1.add_collection(p)
+    ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.3)
+    ax1.set_title("carrot %d"%t)
+    ax1.plot([-12,12],[0,0],'black')
+    center_mass(ax1,X)
+#    print "x_funnel is",x_funnel
+#    print "G_funnel is",G_funnel
+    add_tube(ax1,x_funnel_1,G_funnel_1,eps=0.0001,list_of_dimensions=[0,1],axis=2)
+    add_tube(ax1,x_funnel_2,G_funnel_2,eps=0.0001,list_of_dimensions=[0,1],axis=2)
+    add_tube(ax1,x_funnel_3,G_funnel_3,eps=0.0001,list_of_dimensions=[0,1],axis=2)
+    add_tube(ax1,x_funnel_4,G_funnel_4,eps=0.0001,list_of_dimensions=[0,1],axis=2)
+
     if gripper==1:
         # left Finger position
         finger_left(ax1,X)
