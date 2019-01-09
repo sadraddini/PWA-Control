@@ -76,7 +76,7 @@ sys.build()
 import matplotlib.pyplot as plt
 
 x0=np.array([-0.00,-0.95]).reshape(2,1)
-T=70
+T=50
 (x_n,u,delta_PWA,mu)=point_trajectory(sys,x0,[sys.goal],T)
 
 plt.plot([x_n[t][0,0] for t in range(T+1)],[x_n[t][1,0] for t in range(T+1)])
@@ -95,19 +95,20 @@ for t in range(T):
     B=sum([sys.B[n,i]*delta_PWA[t,n,i] for n in sys.list_of_sum_indices for i in sys.list_of_modes[n]])
     c=sum([sys.c[n,i]*delta_PWA[t,n,i] for n in sys.list_of_sum_indices for i in sys.list_of_modes[n]])
     H=np.vstack([sys.C[n,i].H for n in sys.list_of_sum_indices for i in sys.list_of_modes[n] if delta_PWA[t,n,i]==1])
-    h=np.vstack([sys.C[n,i].h for n in sys.list_of_sum_indices for i in sys.list_of_modes[n] if delta_PWA[t,n,i]==1])+10**-5
+    h=np.vstack([sys.C[n,i].h for n in sys.list_of_sum_indices for i in sys.list_of_modes[n] if delta_PWA[t,n,i]==1])
     H,h=canonical_polytope(H,h)
     cell=linear_cell(A,B,c,polytope(H,h))    
     list_of_cells.append(cell)
 
-for t in range(T):
-    cell=list_of_cells[t]
-    A,B,c,p=cell.A,cell.B,cell.c,cell.p
-    print all(abs(x_n[t+1]-np.dot(A,x_n[t])-np.dot(B,u[t])-c)<10**-8)
-    print all(p.h-np.dot(p.H,np.vstack((x_n[t],u[t])))>=-10**-8)
+#for t in range(T):
+#    cell=list_of_cells[t]
+#    A,B,c,p=cell.A,cell.B,cell.c,cell.p
+#    print all(abs(x_n[t+1]-np.dot(A,x_n[t])-np.dot(B,u[t])-c)<10**-8)
+#    print all(p.h-np.dot(p.H,np.vstack((x_n[t],u[t])))>=-10**-8)
     
-    
-(x,G)=polytopic_trajectory_given_modes(x0,list_of_cells,sys.goal,eps=0.5,order=1)
+
+scale=np.array([0.12,1])    
+(x,u,G,theta)=polytopic_trajectory_given_modes(x0,list_of_cells,sys.goal,eps=0.5,order=1,scale=scale)
 
 
 from visualization.visualize import add_tube

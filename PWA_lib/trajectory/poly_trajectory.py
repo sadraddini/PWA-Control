@@ -105,14 +105,15 @@ def point_trajectory(system,x0,list_of_goals,T,eps=[None]):
 
 
     
-def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1):
+def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[]):
     """
     Description: 
         Polytopic Trajectory Optimization with the ordered list of polytopes given
         This is a convex program as mode sequence is already given
         list_of_cells: each cell has the following attributes: A,B,c, and polytope(H,h)
     """
-    
+    if len(scale)==0:
+        scale=np.ones(x0.shape[0])
     model=Model("Fixed Mode Polytopic Trajectory")
     T=len(list_of_cells)
     n,m=list_of_cells[0].B.shape
@@ -124,8 +125,8 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1):
     model.update()
     
     for j in range(n):
-        model.addConstr(x[0,j]<=x0[j,0]+eps)
-        model.addConstr(x[0,j]>=x0[j,0]-eps)
+        model.addConstr(x[0,j]<=x0[j,0]+eps*scale[j])
+        model.addConstr(x[0,j]>=x0[j,0]-eps*scale[j])
 
     for t in range(T):
         print "adding constraints of t",t
@@ -153,16 +154,20 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1):
     G_T=np.array([G[T,i,j] for i in range(n) for j in range(q)]).reshape(n,q)
     z=zonotope(x_T,G_T)
     subset_zonotopes(model,z,goal)
-    J=LinExpr([(1/(t+1.0),G[t,i,i]) for t in range(T+1) for i in range(n)])
+    # Cost function
+    J=LinExpr([(1/(t+1.0)/scale[i],G[t,i,i]) for t in range(T+1) for i in range(n)])
     model.setObjective(J)
-    model.write("sadra.lp")
+    model.write("polytopic_trajectory.lp")
     model.setParam('TimeLimit', 150)
     model.optimize()
-    x_num,G_num={},{}
+    x_num,G_num,theta_num,u_num={},{},{},{}
     for t in range(T+1):
         x_num[t]=np.array([[x[t,j].X] for j in range(n)]).reshape(n,1)
         G_num[t]=np.array([[G[t,i,j].X] for i in range(n) for j in range(q)]).reshape(n,q)
-    return (x_num,G_num)
+    for t in range(T):
+        theta_num[t]=np.array([[theta[t,i,j].X] for i in range(m) for j in range(q)]).reshape(m,q)
+        u_num[t]=np.array([[u[t,i].X] for i in range(m) ]).reshape(m,1)
+    return (x_num,u_num,G_num,theta_num)
 
 
 
@@ -224,3 +229,64 @@ def valuation_t(x):
         return x_n
     else:
         raise("x is neither a dictionary or a numpy array")
+        
+def block_diag(*arrs):
+    """
+    Create a block diagonal matrix from provided arrays.
+    Given the inputs `A`, `B` and `C`, the output will have these
+    arrays arranged on the diagonal::
+        [[A, 0, 0],
+         [0, B, 0],
+         [0, 0, C]]
+    Parameters
+    ----------
+    A, B, C, ... : array_like, up to 2-D
+        Input arrays.  A 1-D array or array_like sequence of length `n`is
+        treated as a 2-D array with shape ``(1,n)``.
+    Returns
+    -------
+    D : ndarray
+        Array with `A`, `B`, `C`, ... on the diagonal.  `D` has the
+        same dtype as `A`.
+    Notes
+    -----
+    If all the input arrays are square, the output is known as a
+    block diagonal matrix.
+    Examples
+    --------
+    >>> from scipy.linalg import block_diag
+    >>> A = [[1, 0],
+    ...      [0, 1]]
+    >>> B = [[3, 4, 5],
+    ...      [6, 7, 8]]
+    >>> C = [[7]]
+    >>> block_diag(A, B, C)
+    [[1 0 0 0 0 0]
+     [0 1 0 0 0 0]
+     [0 0 3 4 5 0]
+     [0 0 6 7 8 0]
+     [0 0 0 0 0 7]]
+    >>> block_diag(1.0, [2, 3], [[4, 5], [6, 7]])
+    array([[ 1.,  0.,  0.,  0.,  0.],
+           [ 0.,  2.,  3.,  0.,  0.],
+           [ 0.,  0.,  0.,  4.,  5.],
+           [ 0.,  0.,  0.,  6.,  7.]])
+    """
+    if arrs == ():
+        arrs = ([],)
+    arrs = [np.atleast_2d(a) for a in arrs]
+
+    bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
+    if bad_args:
+        raise ValueError("arguments in the following positions have dimension "
+                            "greater than 2: %s" % bad_args)
+
+    shapes = np.array([a.shape for a in arrs])
+    out = np.zeros(np.sum(shapes, axis=0), dtype=arrs[0].dtype)
+
+    r, c = 0, 0
+    for i, (rr, cc) in enumerate(shapes):
+        out[r:r + rr, c:c + cc] = arrs[i]
+        r += rr
+        c += cc
+    return out
