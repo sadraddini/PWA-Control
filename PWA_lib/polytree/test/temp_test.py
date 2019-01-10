@@ -1,9 +1,11 @@
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec  7 18:06:20 2018
+Created on Wed Jan  9 19:38:16 2019
 
 @author: sadra
 """
+
 
 # External imports
 import numpy as np
@@ -71,51 +73,18 @@ sys.list_of_modes[1]=[0,1]
 sys.list_of_modes[2]=[0,1]
 
 sys.build()
+sys.scale=np.array([0.12,1])    
 
 sys.build_cells()
 
 
-import matplotlib.pyplot as plt
-
-x0=np.array([-0.00,-0.95]).reshape(2,1)
-T=70
-(x_n,u,delta_PWA,mu)=point_trajectory(sys,x0,[sys.goal],T)
-
-plt.plot([x_n[t][0,0] for t in range(T+1)],[x_n[t][1,0] for t in range(T+1)])
-plt.plot([x_n[t][0,0] for t in range(T+1)],[x_n[t][1,0] for t in range(T+1)],'+')
-plt.plot([0.1,0.1],[-1,1],'black')
-plt.plot([-0.1,-0.1],[-1,1],'black')
-plt.plot([0],[0],'o')
-#plt.plot([-0.05],[0.5],'o')
-
-
-# Now build a funnel
-list_of_cells=[]
-for t in range(T):
-    mode=tuple([i for n in sys.list_of_sum_indices for i in sys.list_of_modes[n] if delta_PWA[t,n,i]==1])    
-    list_of_cells.append(sys.cell[mode])
-
-  
-sys.scale=np.array([0.12,1])    
-(x,u,G,theta)=polytopic_trajectory_given_modes(x0,list_of_cells,sys.goal,eps=1,order=1,scale=sys.scale)
-
-
-from PWA_lib.visualization.visualize import add_tube
-fig,ax=plt.subplots()
-ax.set_xlim([-0.12,0.12])
-ax.set_ylim([-1,1])
-add_tube(ax,x,G,eps=0.0001,list_of_dimensions=[0,1])
-ax.plot([x[t][0,0] for t in range(T+1)],[x[t][1,0] for t in range(T+1)])
-#ax.plot([x[t][0,0] for t in range(T+1)],[x[t][1,0] for t in range(T+1)],'+')
-ax.plot([0.1,0.1],[-1,1],'black')
-ax.plot([-0.1,-0.1],[-1,1],'black')
-ax.plot([0],[0],'o')
-plt.plot([x_n[t][0,0] for t in range(T+1)],[x_n[t][1,0] for t in range(T+1)])
-plt.plot([x_n[t][0,0] for t in range(T+1)],[x_n[t][1,0] for t in range(T+1)],'+')
-#plt.plot([-0.05],[0.5],'o')
-
 from PWA_lib.polytree.tree import tree
+
+x_sample=np.array([0.01,-0.9]).reshape(2,1)
+T=60
+
 mytree=tree(sys)
 mytree.fill="continous"
-mytree.add_branch(x,u,G,theta,sys.goal) 
+mytree.extend_RRT(x_sample,T,eps=0.1)
+
 mytree.visualize(axis_limit=[-0.12,0.12,-1,1])   

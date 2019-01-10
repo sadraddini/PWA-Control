@@ -28,6 +28,28 @@ class system:
 #        for j in range(self.C[n,i].H.shape[0]) for k in range(self.n)}
         pass
     
+    
+    def build_cells(self):
+        from pypolycontain.utils.redundancy_reduction import canonical_polytope
+        from pypolycontain.lib.polytope import polytope
+        from itertools import product
+        all_modes=list(product(*[self.list_of_modes[n] for n in self.list_of_sum_indices]))
+        self.cell={}
+        print all_modes
+        for mode in all_modes:
+            delta_PWA={}
+            for n in self.list_of_sum_indices:
+                for i in self.list_of_modes[n]:
+                    delta_PWA[n,i]=int(mode[n]==i)
+            print delta_PWA
+            A=sum([self.A[n,i]*delta_PWA[n,i] for n in self.list_of_sum_indices for i in self.list_of_modes[n]])
+            B=sum([self.B[n,i]*delta_PWA[n,i] for n in self.list_of_sum_indices for i in self.list_of_modes[n]])
+            c=sum([self.c[n,i]*delta_PWA[n,i] for n in self.list_of_sum_indices for i in self.list_of_modes[n]])
+            H=np.vstack([self.C[n,i].H for n in self.list_of_sum_indices for i in self.list_of_modes[n] if delta_PWA[n,i]==1])
+            h=np.vstack([self.C[n,i].h for n in self.list_of_sum_indices for i in self.list_of_modes[n] if delta_PWA[n,i]==1])
+            H,h=canonical_polytope(H,h)
+            cell=linear_cell(A,B,c,polytope(H,h))    
+            self.cell[mode]=(cell)
 
 class linear_cell:
     def __init__(self,A,B,c,p):
