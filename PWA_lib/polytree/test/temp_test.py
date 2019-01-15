@@ -80,11 +80,50 @@ sys.build_cells()
 
 from PWA_lib.polytree.tree import tree
 
-x_sample=np.array([0.01,-0.9]).reshape(2,1)
-T=60
+
 
 mytree=tree(sys)
 mytree.fill="continous"
+mytree.system.name="Inverted Pendulum with Two Walls"
+
+#list_of_samples=[np.random.random((2,1))*np.array([-0.12,1]).reshape(2,1)*(-1)**i for i in range(2)]
+#mytree.construct_tree(list_of_samples,T_start=50,T_max=51,eps_point=0.0,eps_poly=0.1)
+#mytree.visualize(axis_limit=[-0.12,0.12,-1,1])   
+#
+#assert 1==0
+x_sample=np.array([0.06,0.75]).reshape(2,1)
+T=50
+mytree.extend_RRT(x_sample,T,eps_point=0.0,eps_poly=0.1)
+mytree.visualize(axis_limit=[-0.12,0.12,-1,1])   
+
+x_sample=np.array([0.0,0.9]).reshape(2,1)
+T=10
+mytree.extend_RRT(x_sample,T,eps_point=0.0,eps_poly=0.1)
+
+mytree.visualize(axis_limit=[-0.12,0.12,-1,1])   
+
+
+x_sample=np.array([0.01,0.7]).reshape(2,1)
+T=30
+mytree.extend_RRT(x_sample,T,eps_point=0.0,eps_poly=0.1)
+mytree.visualize(axis_limit=[-0.12,0.12,-1,1])   
+
+list_of_samples=[np.random.random((2,1))*np.array([-0.12,1]).reshape(2,1)*(-1)**i for i in range(7)]
+mytree.construct_tree(list_of_samples,T_start=50,T_max=51,eps_point=0.0,eps_poly=0.1)
+mytree.visualize(axis_limit=[-0.12,0.12,-1,1]) 
+assert 1==0
+
+x_sample=np.array([-0.05,0.0]).reshape(2,1)
+T=80
 mytree.extend_RRT(x_sample,T,eps=0.1)
+
+x_sample=np.array([0.0,-0.9]).reshape(2,1)
+T=40
+mytree.extend_RRT(x_sample,T,eps=0.01)
+
+x_sample=np.array([0.0,0]).reshape(2,1)
+T=60
+mytree.extend_RRT(x_sample,T,eps=0.01)
+
 
 mytree.visualize(axis_limit=[-0.12,0.12,-1,1])   

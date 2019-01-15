@@ -7,7 +7,7 @@ Created on Tue Dec  4 15:21:17 2018
 
 import numpy as np
 import scipy as sp
-from gurobipy import Model,GRB,LinExpr
+from gurobipy import Model,GRB,LinExpr,tuplelist
 
 import time as time
 
@@ -16,7 +16,7 @@ from pypolycontain.lib.polytope import polytope
 from pypolycontain.lib.zonotope import zonotope
 
 
-def point_trajectory(system,x0,list_of_goals,T,eps=[None]):
+def point_trajectory(system,x0,list_of_goals,T,eps=0):
     """
     Description: point Trajectory Optimization
     Inputs:
@@ -41,7 +41,14 @@ def point_trajectory(system,x0,list_of_goals,T,eps=[None]):
                              for i in system.list_of_modes[n]],vtype=GRB.BINARY,name="delta_pwa")
     model.update()
     # Initial Condition
-    add_initial_condition(system,model,x,x0,eps)
+    
+    print "inside function epsilon is",eps,"initial",x0.T
+    for j in range(system.n):
+#        model.addConstr(x[0,j]<=x0[j,0]+eps*system.scale[j])
+#        model.addConstr(x[0,j]>=x0[j,0]-eps*system.scale[j])
+         model.addConstr(x[0,j]==x0[j,0])
+         print "added"
+    
     # Convexhull Dynamics
     model.addConstrs(x[t,j]==x_PWA.sum(t,n,"*",j) for t in range(T+1) for j in range(system.n)\
                      for n in system.list_of_sum_indices)
@@ -72,8 +79,8 @@ def point_trajectory(system,x0,list_of_goals,T,eps=[None]):
             expr=LinExpr([(1.0,delta_PWA[t,n,i]) for i in system.list_of_modes[n]])
             model.addConstr(expr==1)
     # Final Goal Constraints
-    mu=model.addVars(list_of_goals,vtype=GRB.BINARY)
-    _p=model.addVars(list_of_goals,range(system.n),lb=-1,ub=1)
+    mu=model.addVars(list_of_goals,vtype=GRB.BINARY,name="mu")
+    _p=model.addVars(tuplelist([(goal,j) for goal in list_of_goals for j in range(goal.G.shape[1])]),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="p")
     model.update()
     for j in range(system.n):
         L=LinExpr()
@@ -81,11 +88,18 @@ def point_trajectory(system,x0,list_of_goals,T,eps=[None]):
         L.add(LinExpr([(goal.x[j,0],mu[goal]) for goal in list_of_goals]))
         model.addConstr(L==x[T,j])
     model.addConstr(mu.sum()==1)
+    for goal in list_of_goals:
+        for j in range(goal.G.shape[1]):
+            model.addConstr(_p[goal,j]<=mu[goal])
+            model.addConstr(-_p[goal,j]<=mu[goal])
     # Cost Engineering
     print "model built in",time.time()-t_start," seconds"
     # Optimize
-    model.write("sadra.lp")
+    model.write("point_trajectory.lp")
     model.optimize()
+    if model.Status!=2:
+        print "Infeasible"
+        return (x,u,delta_PWA,mu,False)
     u_num,x_num,delta_PWA_num,mu_num={},{},{},{}
     for t in range(T+1):
         x_num[t]=np.array([x[t,i].X for i in range(system.n)]).reshape(system.n,1)
@@ -100,8 +114,10 @@ def point_trajectory(system,x0,list_of_goals,T,eps=[None]):
 #    for key,val in x_PWA.items():
 #        print key,val.X
 #    for key,val in u_PWA.items():
-#        print key,val.X        
-    return (x_num,u_num,delta_PWA_num,mu_num)
+#        print key,val.X       
+#    for key,val in _p.items():
+#        print key,val
+    return (x_num,u_num,delta_PWA_num,mu_num,True)
 
 
     
@@ -124,6 +140,7 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[
     theta=model.addVars(range(T),range(m),range(q),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="theta")
     model.update()
     
+    print "inside function epsilon is",eps
     for j in range(n):
         model.addConstr(x[0,j]<=x0[j,0]+eps*scale[j])
         model.addConstr(x[0,j]>=x0[j,0]-eps*scale[j])
@@ -131,7 +148,7 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[
     for t in range(T):
         print "adding constraints of t",t
         cell=list_of_cells[t]
-        A,B,c,p=cell.A,cell.B,cell.c,cell.p
+        A,B,c,_p=cell.A,cell.B,cell.c,cell.p
         for j in range(n):
             expr_x=LinExpr([(A[j,k],x[t,k]) for k in range(n)])
             expr_u=LinExpr([(B[j,k],u[t,k]) for k in range(m)])
@@ -147,7 +164,7 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[
         theta_t=np.array([theta[t,i,j] for i in range(m) for j in range(q)]).reshape(m,q)
         GT=sp.linalg.block_diag(G_t,theta_t)
         xu=np.vstack((x_t,u_t))
-        subset_LP(model,xu,GT,Ball(2*q),p)
+        subset_LP(model,xu,GT,Ball(2*q),_p)
 
 
     x_T=np.array([x[T,j] for j in range(n)]).reshape(n,1)
@@ -155,7 +172,7 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[
     z=zonotope(x_T,G_T)
     subset_zonotopes(model,z,goal)
     # Cost function
-    J=LinExpr([(1/(t+1.0)/scale[i],G[t,i,i]) for t in range(T+1) for i in range(n)])
+    J=LinExpr([(1.0/scale[i],G[t,i,i]) for t in range(T+1) for i in range(n)])
     model.setObjective(J)
     model.write("polytopic_trajectory.lp")
     model.setParam('TimeLimit', 150)
@@ -174,10 +191,43 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[
 
 
 
-def polytopic_trajectory(system,x0,list_of_goal_polytopes,T,eps=0.1):
+def polytopic_trajectory(system,x0,list_of_goal_polytopes,T,eps=0.1,order=1):
     """
     Description: Polytopic Trajectory Optimization
     """
+    model=Model("Point Trajectory Optimization")
+    q=int(order*system.n)
+    x=model.addVars(range(T+1),range(system.n),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x")
+    u=model.addVars(range(T),range(system.m),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u")
+    G=model.addVars(range(T+1),range(n),range(q),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="G")
+    theta=model.addVars(range(T),range(m),range(q),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="theta")
+    ##
+    x_PWA=model.addVars([(t,n,i,j) for t in range(T+1) for n in system.list_of_sum_indices \
+                         for i in system.list_of_modes[n] for j in range(system.n)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x_pwa")
+    u_PWA=model.addVars([(t,n,i,j) for t in range(T) for n in system.list_of_sum_indices \
+                         for i in system.list_of_modes[n] for j in range(system.m)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_pwa")
+    G_PWA=model.addVars([(t,n,i,row,column) for t in range(T+1) for n in system.list_of_sum_indices \
+                         for i in system.list_of_modes[n] for row in range(system.n) for column in range(q)],\
+                        lb=-GRB.INFINITY,ub=GRB.INFINITY,name="G_pwa")
+    theta_PWA=model.addVars([(t,n,i,row,column) for t in range(T+1) for n in system.list_of_sum_indices \
+                         for i in system.list_of_modes[n] for row in range(system.m) for column in range(q)],\
+                        lb=-GRB.INFINITY,ub=GRB.INFINITY,name="theta_pwa")
+    delta_PWA=model.addVars([(t,n,i) for t in range(T) for n in system.list_of_sum_indices \
+                             for i in system.list_of_modes[n]],vtype=GRB.BINARY,name="delta_pwa")
+    model.update()
+    for j in range(n):
+        model.addConstr(x[0,j]<=x0[j,0]+eps*system.scale[j])
+        model.addConstr(x[0,j]>=x0[j,0]-eps*system.scale[j])
+    
+    # Convexhull Dynamics and Constraints
+    model.addConstrs(x[t,j]==x_PWA.sum(t,n,"*",j) for t in range(T+1) for j in range(system.n)\
+                     for n in system.list_of_sum_indices)
+    model.addConstrs(u[t,j]==u_PWA.sum(t,n,"*",j) for t in range(T) for j in range(system.m)\
+                     for n in system.list_of_sum_indices)   
+    model.addConstrs(G[t,row,column]==G_PWA.sum(t,n,"*",row,column) for t in range(T) for row in range(system.n)\
+                     for column in range(q) for n in system.list_of_sum_indices) 
+    model.addConstrs(G[t,row,column]==G_PWA.sum(t,n,"*",row,column) for t in range(T) for row in range(system.n)\
+                     for column in range(q) for n in system.list_of_sum_indices) 
     raise NotImplementedError    
 
 
@@ -192,13 +242,13 @@ def add_initial_condition(system,model,x,x0,eps):
     """
     eps=system
     """
-    if eps==[None]:
+    if eps==None:
         print "no epsilon is given"
         model.addConstrs(x[0,i]==x0[i,0] for i in range(system.n))
     else:
-        eps=model.addVars(range(system.n),lb=[-e for e in eps],ub=eps)
+        epsilon=model.addVars(range(system.n),lb=-eps,ub=eps)
         model.update()
-        model.addConstrs(x[0,i]==x0[i,0]+eps[i] for i in range(system.n))
+        model.addConstrs(x[0,i]==x0[i,0]+epsilon[i]*system.scale[i] for i in range(system.n))
 
 
 def tupledict(A):

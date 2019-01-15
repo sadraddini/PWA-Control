@@ -39,8 +39,12 @@ class system:
         for mode in all_modes:
             delta_PWA={}
             for n in self.list_of_sum_indices:
+                for j in range(len(self.list_of_sum_indices)):
+                    if self.list_of_sum_indices[j]==n:
+                        break
                 for i in self.list_of_modes[n]:
-                    delta_PWA[n,i]=int(mode[n]==i)
+#                    delta_PWA[n,i]=int(mode[n]==i)
+                    delta_PWA[n,i]=int(mode[j]==i)
             print delta_PWA
             A=sum([self.A[n,i]*delta_PWA[n,i] for n in self.list_of_sum_indices for i in self.list_of_modes[n]])
             B=sum([self.B[n,i]*delta_PWA[n,i] for n in self.list_of_sum_indices for i in self.list_of_modes[n]])
