@@ -28,7 +28,7 @@ psi=x
 J=0
 
 # Introduce Contact Point
-c1=contact_point(mysystem,0,phi,psi,J)
+c1=contact_point(mysystem,0,phi,psi,J,contact_model="hard_implict")
 D=c1.get_determiners_symbolic()
 D_lambda=mysystem.sys_lambdify(D)
 

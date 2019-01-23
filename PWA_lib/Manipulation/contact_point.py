@@ -24,7 +24,7 @@ class contact_point:
     """
     
     """ SYMBOLIC:"""
-    def __init__(self,sys,index,phi,psi,J,friction=0.5,damping=1,name="Contact Point "):
+    def __init__(self,sys,index,phi,psi,J,friction=0.5,damping=1,name="Contact Point ",contact_model="soft"):
         self.sys=sys # What system it belongs to
         self.phi=phi # Penetration position, symbolic expression
         self.psi=psi # Sliding position, symbolic expression
@@ -33,9 +33,10 @@ class contact_point:
         self.index=index # Must be an integer between [0,N), N the number of contact points
         self.friction=friction
         self.damping=damping
+        self.contact_model=contact_model
         
         self.sys.contact_points.append(self)
-        self.name=name+str(len(self.sys.contact_points))
+        self.name=name+str(len(self.sys.contact_points))+" contact model: "+self.contact_model
         
     def __repr__(self):
         return self.name
@@ -126,7 +127,7 @@ class contact_point:
         h=np.vstack((h1,h2))
         return (H,h)
     
-    def forces_sticking(self,determiners,v_epsilon=0.01):
+    def forces_sticking(self,determiners,v_epsilon=0.01,maximum_penetration=0.01):
         """
         The constraints are as follows:
             * phi <= 0 -> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 <= 0
@@ -146,22 +147,40 @@ class contact_point:
         # f_n >= 0 
         H2=np.zeros((1,m+n))
         h2=np.zeros((1,1))
-        H2[:,n+nC+2*self.index]==-1
+        H2[:,n+m-2*nC+2*self.index]=-1
         # |f_t|<=mu*f_n
         H3=np.zeros((2,m+n))
         h3=np.zeros((2,1))
-        H3[:,n+nC+2*self.index:n+nC+2*(self.index+1)]=np.array([[-self.friction,-1],[-self.friction,1]])
+        H3[:,n+m-2*nC+2*self.index:n+m-2*nC+2*(self.index+1)]=np.array([[-self.friction,-1],[-self.friction,1]])
         # |v_psi|<= v_epsilon
         H4=np.hstack((v_psi_x,v_psi_u))
         h4=v_epsilon-v_psi+np.dot(v_psi_x,x)+np.dot(v_psi_u,u)
         H5=-np.hstack((v_psi_x,v_psi_u))
         h5=v_epsilon+v_psi-np.dot(v_psi_x,x)-np.dot(v_psi_u,u)
-        # Stack them together
-        print H1.shape,H2.shape,H3.shape,H4.shape,H5.shape
-        H=np.vstack((H1,H2,H3,H4,H5))
-        h=np.vstack((h1,h2,h3,h4,h5)).reshape(6,1)
-        return (H,h)
-    
+        # Contact model
+        if self.contact_model=="soft":
+            # we have f_n = - K * phi - c * phi_dot --> K*phi+K*(phi_x,phi_u)(x,u)+c*phi_dot+f_n=0 
+            H6=np.hstack((phi_x,phi_u))*self.K
+            H6[:,n+m-2*nC+2*self.index]=1
+            h6=-self.K*phi-self.damping*v_phi+np.dot(phi_x,x)+np.dot(phi_u,u)
+            H7=-H6
+            h7=self.K*phi+self.damping*v_phi-np.dot(phi_x,x)-np.dot(phi_u,u)
+            H=np.vstack((H1,H2,H3,H4,H5,H6,H7))
+            h=np.vstack((h1,h2,h3,h4,h5,h6,h7)).reshape(8,1)
+            return (H,h)
+        elif self.contact_model=="hard_implict":
+            # I only impose a maximum penetration constraint
+            # phi>=-maximum_penetration: -(phi_x,phi_u)(x,u) + phi_x x+ phi_u u - phi <= maximum_penetration
+            H6=-np.hstack((phi_x,phi_u))
+            h6=phi-np.dot(phi_x,x)-np.dot(phi_u,u)+maximum_penetration
+            H=np.vstack((H1,H2,H3,H4,H5,H6))
+            h=np.vstack((h1,h2,h3,h4,h5,h6)).reshape(7,1)
+            return (H,h)           
+        else:
+            raise ValueError("Unknown contact model")
+        
+        
+        
     def force_slide_positive(self,v_phi,v_psi,phi_x,phi_u,v_psi_x,v_psi_u,phi_0,psi_0,x0,u0):
         """
         The constraints are as as follows:
