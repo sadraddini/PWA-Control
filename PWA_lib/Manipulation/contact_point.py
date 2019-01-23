@@ -24,16 +24,18 @@ class contact_point:
     """
     
     """ SYMBOLIC:"""
-    def __init__(self,sys,index,phi,psi,J,friction=0.5,damping=1,name="Contact Point ",contact_model="soft"):
+    def __init__(self,sys,index,phi,psi,J,friction=0.5,K=100,damping=1,name="Contact Point ",contact_model="soft"):
         self.sys=sys # What system it belongs to
         self.phi=phi # Penetration position, symbolic expression
         self.psi=psi # Sliding position, symbolic expression
         self.J=J # Jacobian for the forces
         self.polytope={}
         self.index=index # Must be an integer between [0,N), N the number of contact points
-        self.friction=friction
-        self.damping=damping
-        self.contact_model=contact_model
+        self.friction=friction # Friction
+        self.contact_model=contact_model # Damper coefficient, used for soft contact
+        # Only used for soft contact
+        self.damping=damping # Damper coefficient, used for soft contact
+        self.K=K # Spring coefficient, used for soft contact
         
         self.sys.contact_points.append(self)
         self.name=name+str(len(self.sys.contact_points))+" contact model: "+self.contact_model
@@ -161,10 +163,11 @@ class contact_point:
         if self.contact_model=="soft":
             # we have f_n = - K * phi - c * phi_dot --> K*phi+K*(phi_x,phi_u)(x,u)+c*phi_dot+f_n=0 
             H6=np.hstack((phi_x,phi_u))*self.K
-            H6[:,n+m-2*nC+2*self.index]=1
-            h6=-self.K*phi-self.damping*v_phi+np.dot(phi_x,x)+np.dot(phi_u,u)
+            H6[n+m-2*nC+2*self.index]=1
+            h6=-self.K*phi-self.damping*v_phi+self.K*(np.dot(phi_x,x)+np.dot(phi_u,u))
+            print h6,self.damping,phi,v_phi
             H7=-H6
-            h7=self.K*phi+self.damping*v_phi-np.dot(phi_x,x)-np.dot(phi_u,u)
+            h7=self.K*phi+self.damping*v_phi-self.K*(np.dot(phi_x,x)+np.dot(phi_u,u))
             H=np.vstack((H1,H2,H3,H4,H5,H6,H7))
             h=np.vstack((h1,h2,h3,h4,h5,h6,h7)).reshape(8,1)
             return (H,h)

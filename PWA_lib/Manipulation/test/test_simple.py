@@ -28,11 +28,11 @@ psi=x
 J=0
 
 # Introduce Contact Point
-c1=contact_point(mysystem,0,phi,psi,J,contact_model="hard_implict")
+c1=contact_point(mysystem,0,phi,psi,J,contact_model="soft")
 D=c1.get_determiners_symbolic()
 D_lambda=mysystem.sys_lambdify(D)
 
-x_sample=np.ones((7,4))
+x_sample=np.ones((7,4))*2
 u_sample=np.ones((7,4))
 
 D_n=mysystem.evaluate_handles(D_lambda,x_sample,u_sample)
@@ -45,6 +45,5 @@ raise 1
 assert 1==0
 c1.forces_no_contact(v_phi,v_psi,phi_x,phi_u,v_psi_x,v_psi_u,phi_0,psi_0,x0,u0)
 
-def complete(D):
-    pass
+
     
