@@ -41,3 +41,11 @@ class symbolic_system:
             G[i]=handle(*[xu[:,k] for k in range(len(self.x)+len(self.u))])
             i+=1
         return G
+    
+    def _extract(self,q):
+        n=len(self.x)
+        J_n=np.array(q[0:n]).reshape(n,1)
+        J_t=np.array(q[n:2*n]).reshape(n,1)
+        J_n_x=np.array(q[2*n:3*n]).reshape(n,n)
+        J_t_x=np.array(q[3*n:4*n]).reshape(n,n)
+        return J_n,J_t,J_n_x,J_t_x

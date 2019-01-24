@@ -56,6 +56,9 @@ class system:
             self.cell[mode]=(cell)
 
 class linear_cell:
+    """
+    This is a linear cell
+    """
     def __init__(self,A,B,c,p):
         self.A=A
         self.B=B

@@ -8,6 +8,10 @@ Created on Tue Jan 15 15:50:54 2019
 from sympy import Symbol,pi,sin,cos,Function,diff,Matrix,symbols,lambdify
 import numpy as np
 
+from PWA_lib.trajectory.system import linear_cell
+from pypolycontain.lib.polytope import polytope
+from pypolycontain.utils.redundancy_reduction import canonical_polytope
+
 
 """
 Important Assumptions that are hard coded here: 
@@ -83,10 +87,14 @@ class contact_point:
             contact point c: object (see above)
             mode in [no_contact,sticking,sliding_right,sliding_left]
             x_0 and u_0 are nominal points IN THE SAME MODE
+        Output: 
+            list of J values and J_n_x and then J_t_x
         """
-        J_x=[diff(self.J,var) for var in self.sys.x]
-        J_u=[diff(self.J,var) for var in self.sys.u]
-        return self.J,J_x,J_u 
+        n=len(self.sys.x)
+        print len(self.J)
+        assert len(self.J)==2*n
+        J_x=[ [diff(J_f,var) for var in self.sys.x] for J_f in self.J]
+        return self.J+J_x[0:n]+J_x[n:]
 
     """ 
     *************************************************
@@ -272,14 +280,32 @@ class contact_point:
             raise ValueError("Unknown contact model")
         
         
-
-
-def make_mode(cp,H,h,J_x,J_u,J,x0,u0):
-    """
-    We have the following:
-        J*u+J_u u -J_u u0
-    """
-    assert 1==1 # It should be H*(x0,u0)<=h
+    def make_mode(self,H,h,Jacobian_numbers,x0,u0,epsilon_confidence):
+        """
+        We have the following:
+            A= J_t_x \lambda + 
+        """
+        n,m,nC=len(self.sys.x),len(self.sys.u),len(self.sys.contact_points)
+        fn0,ft0=u0[m-2*nC+2*self.index,0],u0[m-2*nC+2*self.index+1,0]
+        J_n,J_t,J_n_x,J_t_x=Jacobian_numbers[0:4]
+        A=np.dot(J_n_x,x0)*fn0+np.dot(J_t_x,x0)+ft0
+        B=np.zeros((n,m))
+        B[:,n+m-2*nC+2*self.index:n+m-2*nC+2*(self.index+1)]=np.hstack((J_n.reshape(n,1),J_t.reshape(n,1)))
+        c=-np.dot(A,x0)
+        # Bring epsilon in!
+        H_eps=np.vstack((np.eye(n+m),-np.eye(n+m)))
+        xu0=np.vstack((x0,u0))
+        h_eps=np.vstack((xu0+epsilon_confidence,-xu0+epsilon_confidence))
+        H=np.vstack((H,H_eps))
+        h=np.vstack((h,h_eps))
+        (H,h)=canonical_polytope(H,h)
+        assert 1==1
+        assert all(np.dot(H,xu0)<=h)==True
+#        raise NotImplementedError
+        return linear_cell(A,B,c,polytope(H,h)) 
+    
+    
+          
     
 
 
