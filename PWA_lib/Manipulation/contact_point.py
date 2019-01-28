@@ -92,7 +92,7 @@ class contact_point:
         """
         n=len(self.sys.x)
         print len(self.J)
-        assert len(self.J)==2*n
+        assert len(self.J)==2*n # This is important!
         J_x=[ [diff(J_f,var) for var in self.sys.x] for J_f in self.J]
         return self.J+J_x[0:n]+J_x[n:]
 
@@ -119,7 +119,7 @@ class contact_point:
         # f=0
         H2=np.zeros((4,m+n))
         h2=np.zeros((4,1))
-        print H2.shape,H1.shape
+#        print H2.shape,H1.shape
         H2[:,n+m-2*nC+2*self.index:n+m-2*nC+2*(self.index+1)]=np.vstack((np.eye(2),-np.eye(2)))
         H=np.vstack((H1,H2))
         h=np.vstack((h1,h2))
@@ -279,31 +279,132 @@ class contact_point:
         else:
             raise ValueError("Unknown contact model")
         
+
+
+    """
+    These are the functions to construct stuff :)  
+    Functions with preceding "_" indicate for inner use
+    """    
+    
+    def build_PWA_cells(self,x_sample,u_sample,epsilon_confidence,big_eps=100):
+        n,m,nC=len(self.sys.x),len(self.sys.u),len(self.sys.contact_points)
+        N=x_sample.shape[0]
+        assert N==u_sample.shape[0]
+        D=self.get_determiners_symbolic()
+        D_lambda=self.sys.sys_lambdify(D)
+        E=self.get_determiners_symbolic_J()
+        E_lambda=self.sys.sys_lambdify(E)
+        D_n=self.sys.evaluate_handles(D_lambda,x_sample,u_sample)
+        E_n=self.sys.evaluate_handles(E_lambda,x_sample,u_sample)
+        # Construct Epsilon Confidence
+        # Only for non affecting controls
+        big_epsilon=np.array([y not in [m+n-2*nC+2*self.index,m+n-2*nC+2*self.index+1] and y>n  for y in range(n+m)]).reshape((n+m,1))*10
+        epsilon_confidence=epsilon_confidence+big_epsilon
         
-    def make_mode(self,H,h,Jacobian_numbers,x0,u0,epsilon_confidence):
+        list_of_outputs=[None]*N
+        for i in range(N):
+            p={}
+            z=extract_point(D_n,i)
+            q=extract_point(E_n,i)
+            J_n,J_t,J_n_x,J_t_x=self.sys._extract(q)
+            (H1,h1)=self.forces_no_contact(z)
+            (H2,h2)=self.forces_sticking(z)
+            (H3,h3)=self.force_slide_positive(z)
+            (H4,h4)=self.force_slide_negative(z)
+            p["NC"]=polytope(H1,h1)
+            p["ST"]=polytope(H2,h2)
+            p["SP"]=polytope(H3,h3)
+            p["SN"]=polytope(H4,h4)
+            C=self.construct_PWA_cell(p,[J_n,J_t,J_n_x,J_t_x],x_sample[i,:].reshape(n,1),u_sample[i,:].reshape(m,1),epsilon_confidence)
+#            list_of_outputs[n]=(p,[J_n,J_t,J_n_x,J_t_x])
+            list_of_outputs[i]=C
+            
+        return list_of_outputs
+            
+            
+            
+            
+            
+    
+
+    def construct_linear_cell(self,H,h,Jacobian_numbers,x0,u0,epsilon_confidence):
         """
         We have the following:
-            A= J_t_x \lambda + 
+            A= J_t_x \lambda_n + J_n_x \lambda_t
         """
         n,m,nC=len(self.sys.x),len(self.sys.u),len(self.sys.contact_points)
         fn0,ft0=u0[m-2*nC+2*self.index,0],u0[m-2*nC+2*self.index+1,0]
         J_n,J_t,J_n_x,J_t_x=Jacobian_numbers[0:4]
-        A=np.dot(J_n_x,x0)*fn0+np.dot(J_t_x,x0)+ft0
+#        print J_n
+#        print J_t
+#        print J_n_x
+#        print J_t_x
+        A= J_n_x*fn0 + J_t_x*ft0
         B=np.zeros((n,m))
-        B[:,n+m-2*nC+2*self.index:n+m-2*nC+2*(self.index+1)]=np.hstack((J_n.reshape(n,1),J_t.reshape(n,1)))
+        B[:,m-2*nC+2*self.index:m-2*nC+2*(self.index+1)]=np.hstack((J_n.reshape(n,1),J_t.reshape(n,1)))
+#        print x0.shape,A.shape
         c=-np.dot(A,x0)
         # Bring epsilon in!
         H_eps=np.vstack((np.eye(n+m),-np.eye(n+m)))
         xu0=np.vstack((x0,u0))
         h_eps=np.vstack((xu0+epsilon_confidence,-xu0+epsilon_confidence))
+        print "h_eps.shape=",xu0.shape,epsilon_confidence.shape,h_eps.shape
         H=np.vstack((H,H_eps))
         h=np.vstack((h,h_eps))
         (H,h)=canonical_polytope(H,h)
         assert 1==1
-        assert all(np.dot(H,xu0)<=h)==True
+#        print H,h,h-np.dot(H,xu0)
+#        assert all(np.dot(H,xu0)<=h)==True
 #        raise NotImplementedError
-        return linear_cell(A,B,c,polytope(H,h)) 
+        return linear_cell(A,B,c,polytope(H,h))
     
+    def construct_PWA_cell(self,polytopes_dict,Jacobian_numbers,x0,u0,epsilon_confidence):
+        n,m,nC=len(self.sys.x),len(self.sys.u),len(self.sys.contact_points)
+        C={} # These are the cells
+        fn,ft=u0[m-2*nC+2*self.index,0],u0[m-2*nC+2*self.index+1,0]
+        F=self.generate_contact_forces(fn,ft)
+        for mode in ["NC","ST","SP","SN"]:
+            p=polytopes_dict[mode]
+            H,h=p.H,p.h
+            fn_new,ft_new=F[mode]
+            u0[m-2*nC+2*self.index,0],u0[m-2*nC+2*self.index+1,0]=fn_new,ft_new
+#            raise NotImplementedError # I have to figure out epsilon_confidence here!
+            C[mode]=self.construct_linear_cell(H,h,Jacobian_numbers,x0,u0,epsilon_confidence)
+#        raise NotImplementedError
+        return C
+    
+    def generate_contact_forces(self,fn,ft,fn_dummy=1):
+        """
+        Given a contact force, we generate closest contact forces in all possible contact modes.
+        This contact forces are later used as the nominal forces for linearization.
+        Arguments:
+            fn= nominal force
+            ft= tangential force
+            fn_dummy= if nominal force is zero (no contact), what force should be considered if contact unexpectedely occurs?
+        """
+        F={}
+        if self.friction*fn>abs(ft): # Sticking
+            F["NC"]=(0,0)
+            F["ST"]=(fn,ft)
+            F["SP"]=(fn,self.friction*fn)
+            F["SN"]=(fn,-self.friction*fn)
+        elif self.friction*fn<ft: # Sldiing highly positive!
+            F["NC"]=(0,0)
+            F["ST"]=(fn,self.friction*fn)
+            F["SP"]=(fn,ft)
+            F["SN"]=(fn,-self.friction*fn)        
+        elif -self.friction*fn>-ft: # Sldiing highly negative!
+            F["NC"]=(0,0)
+            F["ST"]=(fn,-self.friction*fn)
+            F["SP"]=(fn,self.friction*fn)
+            F["SN"]=(fn,ft)    
+        elif fn==0: # No Contact
+            assert ft==0
+            F["NC"]=(fn,ft)
+            F["ST"]=(fn_dummy,0)
+            F["SP"]=(fn_dummy,self.friction*fn_dummy)
+            F["SN"]=(fn_dummy,-self.friction*fn_dummy) 
+        return F
     
           
     
