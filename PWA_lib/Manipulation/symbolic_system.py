@@ -49,3 +49,33 @@ class symbolic_system:
         J_n_x=np.array(q[2*n:3*n]).reshape(n,n)
         J_t_x=np.array(q[3*n:4*n]).reshape(n,n)
         return J_n,J_t,J_n_x,J_t_x
+    
+    def get_contact_free_dynamics(self,x_sample,u_sample):
+
+        N=x_sample.shape[0]
+        n,m,nC=len(self.x),len(self.u),len(self.contact_points)
+        E,i=[0]*n,0
+        for f_c in self.f:
+#            print i
+            f_x=[diff(f_c,var) for var in self.x]
+#            print f_x
+            D=self.sys_lambdify(f_x)
+            E[i]=self.evaluate_handles(D,x_sample,u_sample)
+#            print E
+            i+=1
+        print E
+        A={}
+        for k in range(N):
+            A[k]=np.zeros((n,n))
+            for i in range(n):
+                for j in range(n):
+                    if type(E[i][j]) in [type(0.0),type(0),type(np.float64(0))]:
+                        A[k][i,j]=E[i][j]
+                    elif type(E[i][j]) ==type(np.array(0)):
+                        A[k][i,j]=E[i][j][k]
+                    else:
+                        raise NotImplementedError
+        c_lambda=self.sys_lambdify(self.f)
+        c=self.evaluate_handles(c_lambda,x_sample,u_sample)
+        print c
+        return A,c

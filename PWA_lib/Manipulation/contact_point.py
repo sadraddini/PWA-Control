@@ -28,7 +28,7 @@ class contact_point:
     """
     
     """ SYMBOLIC:"""
-    def __init__(self,sys,index,phi,psi,J,friction=0.5,K=100,damping=1,name="Contact Point ",contact_model="soft"):
+    def __init__(self,sys,index,phi,psi,J,friction=0.4,K=100,damping=1,name="Contact Point ",contact_model="soft"):
         self.sys=sys # What system it belongs to
         self.phi=phi # Penetration position, symbolic expression
         self.psi=psi # Sliding position, symbolic expression
@@ -296,11 +296,12 @@ class contact_point:
         E_lambda=self.sys.sys_lambdify(E)
         D_n=self.sys.evaluate_handles(D_lambda,x_sample,u_sample)
         E_n=self.sys.evaluate_handles(E_lambda,x_sample,u_sample)
+        print "************ u_sample is",u_sample
         # Construct Epsilon Confidence
         # Only for non affecting controls
         big_epsilon=np.array([y not in [m+n-2*nC+2*self.index,m+n-2*nC+2*self.index+1] and y>n  for y in range(n+m)]).reshape((n+m,1))*10
         epsilon_confidence=epsilon_confidence+big_epsilon
-        
+        print "************ u_sample is",u_sample        
         list_of_outputs=[None]*N
         for i in range(N):
             p={}
@@ -316,6 +317,7 @@ class contact_point:
             p["SP"]=polytope(H3,h3)
             p["SN"]=polytope(H4,h4)
             C=self.construct_PWA_cell(p,[J_n,J_t,J_n_x,J_t_x],x_sample[i,:].reshape(n,1),u_sample[i,:].reshape(m,1),epsilon_confidence)
+            print "************ u_sample is",u_sample
 #            list_of_outputs[n]=(p,[J_n,J_t,J_n_x,J_t_x])
             list_of_outputs[i]=C
             
@@ -349,14 +351,14 @@ class contact_point:
         xu0=np.vstack((x0,u0))
         h_eps=np.vstack((xu0+epsilon_confidence,-xu0+epsilon_confidence))
         print "h_eps.shape=",xu0.shape,epsilon_confidence.shape,h_eps.shape
-        H=np.vstack((H,H_eps))
-        h=np.vstack((h,h_eps))
-        (H,h)=canonical_polytope(H,h)
+        H_new=np.vstack((H,H_eps))
+        h_new=np.vstack((h,h_eps))
+        (H_can,h_can)=canonical_polytope(H_new,h_new)
         assert 1==1
 #        print H,h,h-np.dot(H,xu0)
 #        assert all(np.dot(H,xu0)<=h)==True
 #        raise NotImplementedError
-        return linear_cell(A,B,c,polytope(H,h))
+        return linear_cell(A,B,c,polytope(H_can,h_can))
     
     def construct_PWA_cell(self,polytopes_dict,Jacobian_numbers,x0,u0,epsilon_confidence):
         n,m,nC=len(self.sys.x),len(self.sys.u),len(self.sys.contact_points)
@@ -367,9 +369,10 @@ class contact_point:
             p=polytopes_dict[mode]
             H,h=p.H,p.h
             fn_new,ft_new=F[mode]
-            u0[m-2*nC+2*self.index,0],u0[m-2*nC+2*self.index+1,0]=fn_new,ft_new
+            _u=np.array(u0)
+            _u[m-2*nC+2*self.index,0],_u[m-2*nC+2*self.index+1,0]=fn_new,ft_new
 #            raise NotImplementedError # I have to figure out epsilon_confidence here!
-            C[mode]=self.construct_linear_cell(H,h,Jacobian_numbers,x0,u0,epsilon_confidence)
+            C[mode]=self.construct_linear_cell(H,h,Jacobian_numbers,x0,_u,epsilon_confidence)
 #        raise NotImplementedError
         return C
     
@@ -478,5 +481,9 @@ def extract_point(determiner,index):
                 d[i]=_d
             else:
                 raise NotImplementedError
+        elif type(determiner[i]) in [type(0.0),type(0),type(np.float64(0))]:
+            d[i]=determiner[i]
+        else:
+            raise NotImplementedError
         d[i]=np.array(d[i])
     return d

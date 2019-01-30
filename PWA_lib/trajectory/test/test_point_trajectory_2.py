@@ -79,7 +79,7 @@ import matplotlib.pyplot as plt
 
 x0=np.array([-0.00,-0.95]).reshape(2,1)
 T=70
-(x_n,u,delta_PWA,mu)=point_trajectory(sys,x0,[sys.goal],T)
+(x_n,u,delta_PWA,mu,flag)=point_trajectory(sys,x0,[sys.goal],T)
 
 plt.plot([x_n[t][0,0] for t in range(T+1)],[x_n[t][1,0] for t in range(T+1)])
 plt.plot([x_n[t][0,0] for t in range(T+1)],[x_n[t][1,0] for t in range(T+1)],'+')
