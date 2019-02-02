@@ -1,10 +1,11 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 23 14:01:34 2019
+Created on Wed Jan 30 15:36:51 2019
 
 @author: sadra
 """
+
 
 from sympy import Symbol,pi,sin,cos,sqrt,Function,diff,Matrix,symbols,lambdify
 import numpy as np
@@ -13,46 +14,60 @@ from PWA_lib.Manipulation.contact_point import contact_point,extract_point
 from PWA_lib.Manipulation.symbolic_system import symbolic_system
 
 # test
-mysystem=symbolic_system("my system")
+mysystem=symbolic_system("my carrot")
 t=mysystem.t
 x=Function("x")(t)
 y=Function("y")(t)
 theta=Function("theta")(t)
 
-x_1=Function("x_1")(t)
-y_1=Function("y_1")(t)
+D=Function("D")(t)
+zeta=Function("zeta")(t)
+sep=Function("sep")(t)
+pen=Function("pen")(t)
 
-x_2=Function("x_2")(t)
-y_2=Function("y_2")(t)
+
+fn_left=Function("fn_left")(t)
+ft_left=Function("ft_left")(t)
+
+fn_right=Function("fn_right")(t)
+ft_right=Function("ft_right")(t)
+
+fn_ground=Function("fn_ground")(t)
+ft_ground=Function("ft_ground")(t)
+
+mysystem.x=[x,y,theta,diff(x,t),diff(y,t),diff(theta,t),D,zeta,sep,pen]
+mysystem.u=[diff(D,t),diff(zeta,t),diff(sep,t),diff(pen,t),\
+            fn_left,ft_left,fn_right,ft_right,fn_ground,ft_ground]
 
 
-fn_1=Function("fn_1")(t)
-ft_1=Function("ft_1")(t)
+R=1
+p=4*R/(3*np.pi)
 
-fn_2=Function("fn_2")(t)
-ft_2=Function("ft_2")(t)
-
-mysystem.x=[x,y,theta,x_1,y_1,x_2,y_2,diff(x,t),diff(y,t),diff(theta,t)]
-mysystem.u=[diff(x_1,t),diff(y_1,t),diff(x_2,t),diff(y_2,t),fn_1,ft_1,fn_2,ft_2]
-
-J1=[0,0,0,0,0,0,0,-sin(theta),cos(theta),(x_1-x)*3.0]+[0,0,0,0,0,0,0,cos(theta),sin(theta),0]
-eta=(y_1-y)/(x_1-x)
-phi=(x_1-x)*sin(eta-theta)
-psi=x_1-x
+"""LEFT FINGER """
+J1=[0,0,0,-cos(theta),sin(theta),D,0,0,0,0]+[0,0,0,-sin(theta),-cos(theta),p,0,0,0,0]
+phi=pen
+psi=D
 c1=contact_point(mysystem,0,phi,psi,J1,contact_model="hard_implicit")
 
-
-
-J2=[0,0,0,0,0,0,0,-sin(theta),cos(theta),(x_2-x)*3]+[0,0,0,0,0,0,0,cos(theta),sin(theta),0]
-eta=(y_2-y)/(x_2-x)
-phi=(x_2-x)*sin(eta-theta)
-psi=x_2-x
+"""RIGHT FINGER """
+J2=[0,0,0,-sin(zeta),cos(zeta),-p*D*sin(zeta-theta),0,0,0,0]+[0,0,0,cos(zeta),sin(zeta),R-p*D*cos(zeta-theta),0,0,0,0]
+phi=sep-D*sin(zeta-theta)-R-pen*sin(zeta-theta)
+psi=R*(zeta-theta)
 c2=contact_point(mysystem,1,phi,psi,J2,contact_model="hard_implicit")
 
+"""GROUND """
 #D=c1.get_determiners_symbolic()
 #D_lambda=mysystem.sys_lambdify(D)
 #E=c1.get_determiners_symbolic_J()
 #E_lambda=mysystem.sys_lambdify(E)
+J3=[0,0,0,-sin(zeta),cos(zeta),-p*D*sin(zeta-theta),0,0,0,0]+[0,0,0,cos(zeta),sin(zeta),R-p*D*cos(zeta-theta),0,0,0,0]
+phi=sep-D*sin(zeta-theta)-R-pen*sin(zeta-theta)
+psi=R*(zeta-theta)
+c3=contact_point(mysystem,2,phi,psi,J3,contact_model="hard_implicit")
+
+
+
+
 
 gravity=9.8
 h=0.01
@@ -81,9 +96,9 @@ A0=np.eye(10)+h*A_dict[0]
 B0=h*g
 c0=h*np.array(extract_point(c_dict,0)).reshape(10,1)
 S={}
-S[1]=c1.build_PWA_cells(x_sample,u_sample,epsilon_confidence=np.ones((18,1))*4.8)
+S[1]=c1.build_PWA_cells(x_sample,u_sample,epsilon_confidence=np.ones((18,1))*0.8)
 #assert False
-S[2]=c2.build_PWA_cells(x_sample,u_sample,epsilon_confidence=np.ones((18,1))*4.8)
+S[2]=c2.build_PWA_cells(x_sample,u_sample,epsilon_confidence=np.ones((18,1))*0.8)
 
 import numpy as np
 

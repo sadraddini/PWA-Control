@@ -7,7 +7,7 @@ Created on Tue Dec  4 15:21:17 2018
 
 import numpy as np
 import scipy as sp
-from gurobipy import Model,GRB,LinExpr,tuplelist
+from gurobipy import Model,GRB,LinExpr,QuadExpr,tuplelist
 
 import time as time
 
@@ -16,7 +16,7 @@ from pypolycontain.lib.polytope import polytope
 from pypolycontain.lib.zonotope import zonotope
 
 
-def point_trajectory(system,x0,list_of_goals,T,eps=0):
+def point_trajectory(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[]):
     """
     Description: point Trajectory Optimization
     Inputs:
@@ -96,8 +96,11 @@ def point_trajectory(system,x0,list_of_goals,T,eps=0):
     print "model built in",time.time()-t_start," seconds"
     # Optimize
     model.write("point_trajectory.lp")
+    J=QuadExpr(sum([u[t,j]*u[t,j] for j in optimize_controls_indices for t in range(T)]))
+    model.setParam("MIPfocus",0)
+    model.setObjective(J,GRB.MINIMIZE)
     model.optimize()
-    if model.Status!=2:
+    if model.Status not in [2,11]:
         print "Infeasible"
         return (x,u,delta_PWA,mu,False)
     u_num,x_num,delta_PWA_num,mu_num={},{},{},{}

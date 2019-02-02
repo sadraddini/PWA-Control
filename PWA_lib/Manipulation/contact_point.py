@@ -125,7 +125,7 @@ class contact_point:
         h=np.vstack((h1,h2))
         return (H,h)
     
-    def forces_sticking(self,determiners,v_epsilon=0.01,maximum_penetration=0.01):
+    def forces_sticking(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
         """
         The constraints are as follows:
             * phi <= 0 -> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 <= 0
@@ -179,7 +179,7 @@ class contact_point:
         
         
         
-    def force_slide_positive(self,determiners,v_epsilon=0.01,maximum_penetration=0.01):
+    def force_slide_positive(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
         """
         The constraints are as as follows:
             * phi <= 0 -> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 <= 0
@@ -229,7 +229,7 @@ class contact_point:
         else:
             raise ValueError("Unknown contact model")
 
-    def force_slide_negative(self,determiners,v_epsilon=0.01,maximum_penetration=0.01):
+    def force_slide_negative(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
         """
         The constraints are as as follows:
             * phi <= 0 -> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 <= 0
