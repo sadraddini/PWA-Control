@@ -28,13 +28,17 @@ class contact_point:
     """
     
     """ SYMBOLIC:"""
-    def __init__(self,sys,index,phi,psi,J,friction=0.4,K=100,damping=1,name="Contact Point ",contact_model="soft"):
+    def __init__(self,sys,phi,psi,J,friction=0.4,K=100,damping=1,name="Contact Point ",contact_model="soft"):
         self.sys=sys # What system it belongs to
         self.phi=phi # Penetration position, symbolic expression
         self.psi=psi # Sliding position, symbolic expression
         self.J=J # Jacobian for the forces
+        self.index=len(self.sys.contact_points) # Must be an integer between [0,N), N the number of contact points
+        # The bounds
+        self.psi_max=None
+        self.psi_min=None
+        # Dynamical properties
         self.polytope={}
-        self.index=index # Must be an integer between [0,N), N the number of contact points
         self.friction=friction # Friction
         self.contact_model=contact_model # Damper coefficient, used for soft contact
         # Only used for soft contact
@@ -47,7 +51,7 @@ class contact_point:
     def __repr__(self):
         return self.name
         
-    def get_determiners_symbolic(self):
+    def _get_determiners_symbolic(self):
         """
         The used inputs of the function are two: 
             * phi: penetration function
@@ -69,19 +73,14 @@ class contact_point:
         t=self.sys.t
         v_phi=diff(self.phi,t) 
         v_psi=diff(self.psi,t)
-        _output[0:4]=self.phi,self.psi,v_phi,v_psi
         # v_psi=self.sys.sub_derivatives(v_psi)
         phi_x=[diff(self.phi,var) for var in self.sys.x]
         phi_u=[diff(self.phi,var) for var in self.sys.u]
         v_psi_x=[diff(v_psi,var) for var in self.sys.x]
         v_psi_u=[diff(v_psi,var) for var in self.sys.u]
-        _output[4:4+n]=phi_x[0:n]
-        _output[4+n:4+n+m]=phi_u[0:m]
-        _output[4+n+m:4+n+m+n]=v_psi_x[0:m]
-        _output[4+n+m+n:4+n+m+n+m]=v_psi_u[0:m]
         return (self.sys.x,self.sys.u,self.phi,self.psi,v_phi,v_psi,np.array(phi_x),np.array(phi_u),np.array(v_psi_x),np.array(v_psi_u))
 
-    def get_determiners_symbolic_J(self):
+    def _get_determiners_symbolic_J(self):
         """
         Given the arguments:
             contact point c: object (see above)
@@ -91,7 +90,6 @@ class contact_point:
             list of J values and J_n_x and then J_t_x
         """
         n=len(self.sys.x)
-        print len(self.J)
         assert len(self.J)==2*n # This is important!
         J_x=[ [diff(J_f,var) for var in self.sys.x] for J_f in self.J]
         return self.J+J_x[0:n]+J_x[n:]
@@ -101,7 +99,7 @@ class contact_point:
     NUMERICAL: The arguments are numbers, not symbols
     *************************************************
     """  
-    def forces_no_contact(self,determiners):
+    def _forces_no_contact(self,determiners):
         """
         The constraints are as follows:
             * phi >= 0 --> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 >= phi_epsilon
@@ -125,7 +123,7 @@ class contact_point:
         h=np.vstack((h1,h2))
         return (H,h)
     
-    def forces_sticking(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
+    def _forces_sticking(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
         """
         The constraints are as follows:
             * phi <= 0 -> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 <= 0
@@ -179,7 +177,7 @@ class contact_point:
         
         
         
-    def force_slide_positive(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
+    def _force_slide_positive(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
         """
         The constraints are as as follows:
             * phi <= 0 -> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 <= 0
@@ -229,7 +227,7 @@ class contact_point:
         else:
             raise ValueError("Unknown contact model")
 
-    def force_slide_negative(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
+    def _force_slide_negative(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
         """
         The constraints are as as follows:
             * phi <= 0 -> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 <= 0
@@ -290,34 +288,31 @@ class contact_point:
         n,m,nC=len(self.sys.x),len(self.sys.u),len(self.sys.contact_points)
         N=x_sample.shape[0]
         assert N==u_sample.shape[0]
-        D=self.get_determiners_symbolic()
+        D=self._get_determiners_symbolic()
         D_lambda=self.sys.sys_lambdify(D)
-        E=self.get_determiners_symbolic_J()
+        E=self._get_determiners_symbolic_J()
         E_lambda=self.sys.sys_lambdify(E)
         D_n=self.sys.evaluate_handles(D_lambda,x_sample,u_sample)
         E_n=self.sys.evaluate_handles(E_lambda,x_sample,u_sample)
-        print "************ u_sample is",u_sample
         # Construct Epsilon Confidence
         # Only for non affecting controls
         big_epsilon=np.array([y not in [m+n-2*nC+2*self.index,m+n-2*nC+2*self.index+1] and y>n  for y in range(n+m)]).reshape((n+m,1))*10
         epsilon_confidence=epsilon_confidence+big_epsilon
-        print "************ u_sample is",u_sample        
         list_of_outputs=[None]*N
         for i in range(N):
             p={}
             z=extract_point(D_n,i)
             q=extract_point(E_n,i)
             J_n,J_t,J_n_x,J_t_x=self.sys._extract(q)
-            (H1,h1)=self.forces_no_contact(z)
-            (H2,h2)=self.forces_sticking(z)
-            (H3,h3)=self.force_slide_positive(z)
-            (H4,h4)=self.force_slide_negative(z)
+            (H1,h1)=self._forces_no_contact(z)
+            (H2,h2)=self._forces_sticking(z)
+            (H3,h3)=self._force_slide_positive(z)
+            (H4,h4)=self._force_slide_negative(z)
             p["NC"]=polytope(H1,h1)
             p["ST"]=polytope(H2,h2)
             p["SP"]=polytope(H3,h3)
             p["SN"]=polytope(H4,h4)
             C=self.construct_PWA_cell(p,[J_n,J_t,J_n_x,J_t_x],x_sample[i,:].reshape(n,1),u_sample[i,:].reshape(m,1),epsilon_confidence)
-            print "************ u_sample is",u_sample
 #            list_of_outputs[n]=(p,[J_n,J_t,J_n_x,J_t_x])
             list_of_outputs[i]=C
             
@@ -350,7 +345,6 @@ class contact_point:
         H_eps=np.vstack((np.eye(n+m),-np.eye(n+m)))
         xu0=np.vstack((x0,u0))
         h_eps=np.vstack((xu0+epsilon_confidence,-xu0+epsilon_confidence))
-        print "h_eps.shape=",xu0.shape,epsilon_confidence.shape,h_eps.shape
         H_new=np.vstack((H,H_eps))
         h_new=np.vstack((h,h_eps))
         (H_can,h_can)=canonical_polytope(H_new,h_new)

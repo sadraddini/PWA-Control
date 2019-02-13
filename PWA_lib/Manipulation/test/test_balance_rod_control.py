@@ -14,7 +14,7 @@ sys=pickle.load(open("sadra_bar.pkl","r"))
 
 
 gravity=9.8
-x0=np.array([0,0,0.0,1,0.00,-1,0.0,1.3,0,0.0]).reshape(10,1)
+x0=np.array([0,0,0.0,1,0,-1,0,0,1.4,0.0]).reshape(10,1)
 #u0=np.array(([0,0,0,0,gravity/2,0,gravity/2,0])).reshape(8,1)
 u0=np.array(([0,0,0,0,0,0,gravity/2,0])).reshape(8,1)
 
@@ -71,7 +71,7 @@ def animate(X,ax1):
 #    yf_1=y+x_1*np.sin(theta)-y_1*np.cos(theta)-0.07
 #    yf_2=y+x_2*np.sin(theta)-y_2*np.cos(theta)-0.07
 #    ax1.plot([xf_1,xf_2],[yf_1,yf_2],'^',linewidth=3,markersize=10)
-    ax1.plot([x_1,x_2],[y_1,y_2],'^',linewidth=3,markersize=10)
+    ax1.plot([x_1,x_2],[y_1-0.07,y_2-0.07],'^',linewidth=3,markersize=10)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.5)
 
 
@@ -81,7 +81,7 @@ for t in range(T):
     fig,ax = plt.subplots()
     ax.set_title("Balancing t=%d \n Right finger: %s \n Left Finger: %s"%(t,mode_name[list_of_modes[t][1]],mode_name[list_of_modes[t][2]]))
     animate(x_n[t],ax)
-    if t==0:
+    if t==-1:
         ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
     fig.savefig('figures/bar_%d.png'%t, dpi=100)
     

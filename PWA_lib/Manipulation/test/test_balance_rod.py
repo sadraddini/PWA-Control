@@ -36,18 +36,16 @@ mysystem.x=[x,y,theta,x_1,y_1,x_2,y_2,diff(x,t),diff(y,t),diff(theta,t)]
 mysystem.u=[diff(x_1,t),diff(y_1,t),diff(x_2,t),diff(y_2,t),fn_1,ft_1,fn_2,ft_2]
 
 J1=[0,0,0,0,0,0,0,-sin(theta),cos(theta),(x_1-x)*3.0]+[0,0,0,0,0,0,0,cos(theta),sin(theta),0]
-eta=(y_1-y)/(x_1-x)
-phi=(x_1-x)*sin(eta-theta)
+phi=y-y_1+(x_1-x)*theta
 psi=x_1-x
-c1=contact_point(mysystem,0,phi,psi,J1,contact_model="hard_implicit")
+c1=contact_point(mysystem,phi,psi,J1,contact_model="hard_implicit")
 
 
 
 J2=[0,0,0,0,0,0,0,-sin(theta),cos(theta),(x_2-x)*3]+[0,0,0,0,0,0,0,cos(theta),sin(theta),0]
-eta=(y_2-y)/(x_2-x)
-phi=(x_2-x)*sin(eta-theta)
+phi=y-y_2+(x_2-x)*theta
 psi=x_2-x
-c2=contact_point(mysystem,1,phi,psi,J2,contact_model="hard_implicit")
+c2=contact_point(mysystem,phi,psi,J2,contact_model="hard_implicit")
 
 #D=c1.get_determiners_symbolic()
 #D_lambda=mysystem.sys_lambdify(D)
@@ -81,9 +79,9 @@ A0=np.eye(10)+h*A_dict[0]
 B0=h*g
 c0=h*np.array(extract_point(c_dict,0)).reshape(10,1)
 S={}
-S[1]=c1.build_PWA_cells(x_sample,u_sample,epsilon_confidence=np.ones((18,1))*4.8)
+S[1]=c1.build_PWA_cells(x_sample,u_sample,epsilon_confidence=np.ones((18,1))*44.8)
 #assert False
-S[2]=c2.build_PWA_cells(x_sample,u_sample,epsilon_confidence=np.ones((18,1))*4.8)
+S[2]=c2.build_PWA_cells(x_sample,u_sample,epsilon_confidence=np.ones((18,1))*44.8)
 
 import numpy as np
 
