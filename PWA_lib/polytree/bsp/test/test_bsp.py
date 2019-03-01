@@ -9,7 +9,7 @@ Created on Fri Feb 22 16:47:31 2019
 import numpy as np
 
 from pypolycontain.lib.AH_polytope import AH_polytope
-from pypolycontain.lib.polytope import polytope,Box
+from pypolycontain.lib.polytope import polytope,Box,translate
 from pypolycontain.lib.zonotope import zonotope
 
 from pypolycontain.visualization.visualize_2D import visualize_2D_zonotopes_ax as visZ
@@ -26,22 +26,19 @@ from matplotlib.patches import Rectangle
 n=2
 q=3
 B=Box(q)
-N=30
-list_of_polytopes=[AH_polytope(np.random.random((n,q))*1,np.random.random((n,1))*10+0.0*i,B) for i in range(N)]
+N=100
+X=translate(Box(2,N/2.0+2),np.array([N/2,N/2]).reshape(2,1))
+list_of_polytopes=[AH_polytope(np.random.random((n,q))*1,np.random.random((n,1))*10+1*i,B) for i in range(N)]
 zonotopes={poly:zonotope(poly.t,poly.T) for poly in list_of_polytopes}
 fig, ax = plt.subplots() # note we must use plt.subplots, not plt.subplot
 visZ(ax,zonotopes.values())
 
 mytree=BSP_tree(list_of_polytopes)
 
-mytree.deepen_tree_one_step()
-mytree.visualize()
+mytree.construct_tree(6,N=3)
 
-mytree.deepen_tree_one_step()
-mytree.visualize()
+mytree._get_polyhedrons(X)
+P_list=mytree.build_Plist()
 
-mytree.deepen_tree_one_step()
-mytree.visualize()
-
-mytree.deepen_tree_one_step()
-mytree.visualize()
+for leaf in mytree.leafs:
+    print leaf,len(P_list[leaf])
