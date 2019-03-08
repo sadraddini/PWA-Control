@@ -99,28 +99,32 @@ def point_trajectory(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[
     J=QuadExpr(sum([u[t,j]*u[t,j] for j in optimize_controls_indices for t in range(T)]))
     model.setParam("MIPfocus",0)
     model.setObjective(J,GRB.MINIMIZE)
+    model.setParam('TimeLimit', 60)
     model.optimize()
-    if model.Status not in [2,11]:
-        print "Infeasible"
+    if model.Status==9 and model.SolCount>=0:
+        flag=True # Some Solution
+    elif model.Status==9 and model.SolCount==0:
+        flag=False # No solution
+    elif model.Status not in [2,11]:
+        flag=False
+    else:
+        flag=True
+    if flag==False:
+        print "Infeasible or time limit reached"
         return (x,u,delta_PWA,mu,False)
-    u_num,x_num,delta_PWA_num,mu_num={},{},{},{}
-    for t in range(T+1):
-        x_num[t]=np.array([x[t,i].X for i in range(system.n)]).reshape(system.n,1)
-    for t in range(T):
-        u_num[t]=np.array([u[t,i].X for i in range(system.m)]).reshape(system.m,1)
-    for t in range(T):
-        for n in system.list_of_sum_indices:
-            for i in system.list_of_modes[n]:
-                delta_PWA_num[t,n,i]=delta_PWA[t,n,i].X
-    for goal in list_of_goals:
-        mu_num[goal]=mu[goal].X
-#    for key,val in x_PWA.items():
-#        print key,val.X
-#    for key,val in u_PWA.items():
-#        print key,val.X       
-#    for key,val in _p.items():
-#        print key,val
-    return (x_num,u_num,delta_PWA_num,mu_num,True)
+    else:
+        u_num,x_num,delta_PWA_num,mu_num={},{},{},{}
+        for t in range(T+1):
+            x_num[t]=np.array([x[t,i].X for i in range(system.n)]).reshape(system.n,1)
+        for t in range(T):
+            u_num[t]=np.array([u[t,i].X for i in range(system.m)]).reshape(system.m,1)
+        for t in range(T):
+            for n in system.list_of_sum_indices:
+                for i in system.list_of_modes[n]:
+                    delta_PWA_num[t,n,i]=delta_PWA[t,n,i].X
+        for goal in list_of_goals:
+            mu_num[goal]=mu[goal].X
+        return (x_num,u_num,delta_PWA_num,mu_num,True)
 
 
     
