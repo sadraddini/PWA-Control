@@ -23,7 +23,7 @@ class state:
         self.p=p
         self.x=p.x
         self.G=p.G+np.random.random(p.G.shape)*0.0001
-        self.p=zonotope(self.x,self.G,color=p.color,name=self.name)
+        self.p=zonotope(self.x,self.G,color=p.color,name="zonotope"+self.name)
         self.t=t
         v=vcube(p.G.shape[1])
         self.vertices=p.x.T+(np.dot(p.G,v.T)).T
@@ -55,10 +55,10 @@ class tree():
     def restart_fig(self):
         self.fig,self.ax=plt.subplots()
         
-    def visualize(self,axis_limit=[None]):
+    def visualize(self,axis_limit=[True]):
         visZ(self.ax,[x.p for x in self.states],axis_limit=axis_limit,title="%s - %d zonotopes %d branches" %(self.name,len(self.states),len(self.branches)))
         self.fig.savefig("figures/tree_%d"%len(self.branches))
-    
+            
     def add_branch(self,x,u,G,theta,goal):
         """
         add x,u,G,theta

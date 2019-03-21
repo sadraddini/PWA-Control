@@ -101,10 +101,12 @@ def point_trajectory(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[
     model.setObjective(J,GRB.MINIMIZE)
     model.setParam('TimeLimit', 60)
     model.optimize()
-    if model.Status==9 and model.SolCount>=0:
+    if model.Status==9 and model.SolCount>=1:
         flag=True # Some Solution
+        print "time limit reached but %d solutions exist"%model.SolCount
     elif model.Status==9 and model.SolCount==0:
         flag=False # No solution
+        print "time limit reached and no solution exists"
     elif model.Status not in [2,11]:
         flag=False
     else:
