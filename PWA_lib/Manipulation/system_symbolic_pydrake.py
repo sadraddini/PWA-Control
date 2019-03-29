@@ -29,7 +29,7 @@ class system_symbolic:
         # Contacts:
 #        self.u_lambda=np.hstack(*[contact_point.u_lambda for contact_point in self.contact_points])
         # Dynamics
-        self.dynamics=dynamics()
+        self.dynamics=dynamics(None,None,None,None)
                 
         
 
@@ -93,7 +93,15 @@ class system_symbolic:
         A_22=np.eye(self.v_o.shape[0])-self.h*np.dot(self.M_inv,beta)
         self.dynamics.A_inv=np.vstack ( ( np.hstack((A_11,A_12))  ,  np.hstack((A_21,A_22)) ) )
         
-        self.dynamics.B_u=np.vstack((np.zeros((self.q.shape[0],self.B.shape[1])),self.h*self.B))
+        self.dynamics.B_u_1=np.vstack((np.zeros((self.q.shape[0],self.B.shape[1])),self.h*self.B))
+        self.dynamics.B_u_2=np.vstack((np.zeros((self.q_o.shape[0],self.q_m.shape[0])),\
+                                       self.h*np.eye(self.q_m.shape[0]),\
+                                       np.zeros((self.v_o.shape[0],self.q_m.shape[0]))))
+        
+#        print self.dynamics.B_u_1.shape
+#        print self.dynamics.B_u_2.shape
+       
+        self.dynamics.B_u=np.hstack((self.dynamics.B_u_1,self.dynamics.B_u_2))
         
         self.dynamics.B_lambda=np.vstack((np.zeros((self.q.shape[0],self.J.shape[1])),self.h*self.J))
 
@@ -113,9 +121,12 @@ class system_symbolic:
         B_u_n=np.dot(A_n,sym.Evaluate(D.B_u,Eta))
         B_lambda_n=np.dot(A_n,sym.Evaluate(D.B_lambda,Eta))
         c_n=np.dot(A_n,sym.Evaluate(D.c,Eta))
-        return A_n,B_u_n,B_lambda_n,c_n
+        return dynamics(A_n,B_u_n,B_lambda_n,c_n)
     
     
+
+
+
     
 def _evaluate_polyhedral_matrices(H,h,Eta):
     H_n=sym.Evaluate(H,Eta)
@@ -124,8 +135,8 @@ def _evaluate_polyhedral_matrices(H,h,Eta):
 
             
 class dynamics:
-    def __init__(self):
-        self.A=np.empty(0)
-        self.B_u=np.empty(0)
-        self.B_lambda=np.empty(0)
-        self.c=np.empty(0)
+    def __init__(self,A,B_u,B_lambda,c):
+        self.A=A
+        self.B_u=B_u
+        self.B_lambda=B_lambda
+        self.c=c

@@ -48,15 +48,18 @@ mysystem.J=np.hstack((J_1,J_2))
 mysystem.u_lambda=np.array([sym.Variable("lambda_1n"),sym.Variable("lambda_1t"),sym.Variable("lambda_2n"),sym.Variable("lambda_2t")])
 
 mysystem._build_state_space()
-
 mysystem._linearize_dynamics_symbolic()
 
 Eta={x:0,y:0,theta:0,x_1:1,x_2:-1,y_1:0,y_2:0,
      mysystem.v_o[0]:0,mysystem.v_o[1]:0,mysystem.v_o[2]:0,
      mysystem.u_lambda[0]:1,mysystem.u_lambda[1]:0,mysystem.u_lambda[2]:1,mysystem.u_lambda[3]:0,
+     mysystem.u_m[0]:1,mysystem.u_m[1]:0,mysystem.u_m[2]:1,mysystem.u_m[3]:0,
      mysystem.h:0.01}
-A,B_u,B_lambda,c=mysystem._evaluate_dynamical_matrices(Eta)
 
-zeta=np.array([-phi_1])
-H,h=mysystem._polyhedrize_constraints_symbolic(zeta)
-H_n,h_n=_evaluate_polyhedral_matrices(H,h,Eta)
+
+dynamical_matrices=mysystem._evaluate_dynamical_matrices(Eta)
+
+
+C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,name="contact point")
+C1._contact_geometery_all()
+H,h=C1.Evaluate_polyhedral_matrices(dynamical_matrices,Eta)

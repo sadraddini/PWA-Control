@@ -20,10 +20,7 @@ class symbolic_system:
     def __repr__(self):
         return self.name+" with %d states, %d controls, and %d contact points"\
             %(len(self.x),len(self.u),len(self.contact_points))
-        
-    def sub_derivative(phi):
-        raise NotImplementedError
-        
+              
     def sys_lambdify(self,list_of_expressions):
         return [lambdify(self.x+self.u,expression,"numpy") for expression in list_of_expressions]
     
@@ -63,7 +60,7 @@ class symbolic_system:
             E[i]=self.evaluate_handles(D,x_sample,u_sample)
 #            print E
             i+=1
-        print E
+#        print E
         A={}
         for k in range(N):
             A[k]=np.zeros((n,n))
@@ -77,5 +74,5 @@ class symbolic_system:
                         raise NotImplementedError
         c_lambda=self.sys_lambdify(self.f)
         c=self.evaluate_handles(c_lambda,x_sample,u_sample)
-        print c
+#        print c
         return A,c

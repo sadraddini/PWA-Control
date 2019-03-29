@@ -14,12 +14,12 @@ sys=pickle.load(open("sadra_bar.pkl","r"))
 
 
 gravity=9.8
-x0=np.array([0,0,0.0,1,0,-1,0,0,1.4,0.0]).reshape(10,1)
+x0=np.array([0,0.15,0.0,1,0.00,-1,0.00,0,0,0]).reshape(10,1)
 #u0=np.array(([0,0,0,0,gravity/2,0,gravity/2,0])).reshape(8,1)
 u0=np.array(([0,0,0,0,0,0,gravity/2,0])).reshape(8,1)
 
 T=60
-(x_n,u,delta_PWA,mu,flag)=point_trajectory(sys,x0,[sys.goal],T,eps=0,optimize_controls_indices=[])
+(x_n,u,delta_PWA,mu,flag)=point_trajectory(sys,x0,[sys.goal],T,eps=1,optimize_controls_indices=[0,2])
 
 list_of_cells=[]
 list_of_modes={}
@@ -84,21 +84,22 @@ for t in range(T):
     if t==-1:
         ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
     fig.savefig('figures/bar_%d.png'%t, dpi=100)
-    
-(x,u,G,theta)=polytopic_trajectory_given_modes(x0,list_of_cells,sys.goal,eps=1,order=1)
+
+raise 0    
+(x,u,G,theta)=polytopic_trajectory_given_modes(x0,list_of_cells,sys.goal,eps=0,order=1)
 
 from PWA_lib.visualization.visualize import add_tube
 fig,ax=plt.subplots()
-ax.set_xlim([-0.5,0.5])
-ax.set_ylim([-1,1])
 list_of_dimensions=[0,1]
 i,j=list_of_dimensions
 add_tube(ax,x,G,eps=0.0001,list_of_dimensions=list_of_dimensions)
 ax.plot([x[t][i,0] for t in range(T+1)],[x[t][j,0] for t in range(T+1)])
 #ax.plot([x[t][0,0] for t in range(T+1)],[x[t][1,0] for t in range(T+1)],'+')
 ax.plot([0],[0],'o')
-plt.plot([x_n[t][i,0] for t in range(T+1)],[x_n[t][j,0] for t in range(T+1)])
-plt.plot([x_n[t][i,0] for t in range(T+1)],[x_n[t][j,0] for t in range(T+1)],'+')
+ax.plot([x_n[t][i,0] for t in range(T+1)],[x_n[t][j,0] for t in range(T+1)])
+ax.plot([x_n[t][i,0] for t in range(T+1)],[x_n[t][j,0] for t in range(T+1)],'+')
+ax.set_xlim([-0.5,0.5])
+ax.set_ylim([-1,1])
 #plt.plot([-0.05],[0.5],'o')
 
 from PWA_lib.polytree.tree import tree
@@ -106,3 +107,17 @@ mytree=tree(sys)
 mytree.fill="continous"
 mytree.add_branch(x,u,G,theta,sys.goal) 
 mytree.visualize(axis_limit=[-0.5,0.5,-1,1])
+sys.scale={i:1 for i in range(10)}
+list_of_samples=[
+np.array([0.05,0,0.0,1,0.001,-1,0.001,0,0,0]).reshape(10,1),
+np.array([0,0.02,0,1,0.001,-1,0.001,0,0,0]).reshape(10,1),
+np.array([0,0,0.1,1,0.001,-1,0.001,0,0.1,0]).reshape(10,1), 
+np.array([0,0,0,1,0.001,-1,0.001,0,0.2,0]).reshape(10,1),  
+np.array([0,0,0.1,1,0.001,-1,0.001,1.1,0,0]).reshape(10,1),  
+np.array([0,0,0,1,0.001,-1,0.001,0,0,0.8]).reshape(10,1)  , 
+np.array([0,0,0,1,0.001,-1,0.001,-0.3,0,0]).reshape(10,1) ,  
+np.array([0,0,0,1,0.001,-1,0.001,0,0.0,0.5]).reshape(10,1)  , 
+np.array([0,0,0,1,0.001,-1,0.001,0.3,0.0,0.2]).reshape(10,1)   ,
+np.array([0,0,0,1,0.001,-1,0.001,-0.2,0.0,0]).reshape(10,1) ,  
+        ]
+mytree.construct_tree(list_of_samples,T_start=23,T_max=25,eps_point=0.1,eps_poly=0.1)

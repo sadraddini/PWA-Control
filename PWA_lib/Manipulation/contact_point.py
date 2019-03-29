@@ -12,6 +12,16 @@ from PWA_lib.trajectory.system import linear_cell
 from pypolycontain.lib.polytope import polytope
 from pypolycontain.utils.redundancy_reduction import canonical_polytope
 
+"""
+
+
+WARNING: THIS IS NOT UPDATED ANYMORE
+
+
+""""
+
+
+
 
 """
 Important Assumptions that are hard coded here: 
@@ -40,7 +50,7 @@ class contact_point:
         # Dynamical properties
         self.polytope={}
         self.friction=friction # Friction
-        self.contact_model=contact_model # Damper coefficient, used for soft contact
+        self.contact_model=contact_model 
         # Only used for soft contact
         self.damping=damping # Damper coefficient, used for soft contact
         self.K=K # Spring coefficient, used for soft contact
@@ -63,22 +73,28 @@ class contact_point:
             * v_psi: psi_dot 
             * phi_x:  derivative of phi with respect to x: vector
             * phi_u: partial derivative of phi with respect to u: vector
+            * psi_x: 
+            * psi_u: 
             * v_psi_x: derivative of v_psi with respect to x: vector
             * v_psi_u: derivative of v_psi with respect to u: vector
             What we have is a vector of 2+2+2*(n+m) vector
         """
-        n=len(self.sys.x)
-        m=len(self.sys.u)
-        _output=[0]*(4+2*(n+m))
+#        n=len(self.sys.x)
+#        m=len(self.sys.u)
         t=self.sys.t
         v_phi=diff(self.phi,t) 
         v_psi=diff(self.psi,t)
         # v_psi=self.sys.sub_derivatives(v_psi)
         phi_x=[diff(self.phi,var) for var in self.sys.x]
         phi_u=[diff(self.phi,var) for var in self.sys.u]
+        #
+        psi_x=[diff(self.psi,var) for var in self.sys.x]
+        psi_u=[diff(self.psi,var) for var in self.sys.u]        
+        #
         v_psi_x=[diff(v_psi,var) for var in self.sys.x]
         v_psi_u=[diff(v_psi,var) for var in self.sys.u]
-        return (self.sys.x,self.sys.u,self.phi,self.psi,v_phi,v_psi,np.array(phi_x),np.array(phi_u),np.array(v_psi_x),np.array(v_psi_u))
+        return (self.sys.x,self.sys.u,self.phi,self.psi,v_phi,v_psi,\
+                np.array(phi_x),np.array(phi_u),np.array(psi_x),np.array(psi_u),np.array(v_psi_x),np.array(v_psi_u))
 
     def _get_determiners_symbolic_J(self):
         """
@@ -96,18 +112,23 @@ class contact_point:
 
     """ 
     *************************************************
+    *************************************************
+    *************************************************
     NUMERICAL: The arguments are numbers, not symbols
     *************************************************
+    *************************************************
+    *************************************************
     """  
-    def _forces_no_contact(self,determiners):
+    
+    def _forces_no_contact_phi(self,determiners):
         """
         The constraints are as follows:
             * phi >= 0 --> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 >= phi_epsilon
             * f_n = 0 
             * f_t = 0
         """
-        assert len(determiners)==10 # This is hard coded. Wonder why I keep psi as one of them:D
-        x,u,phi,psi,v_phi,v_psi,phi_x,phi_u,v_psi_x,v_psi_u=determiners
+        assert len(determiners)==12 # This is hard coded. Wonder why I keep psi as one of them:D
+        x,u,phi,psi,v_phi,v_psi,phi_x,phi_u,psi_x,psi_u,v_psi_x,v_psi_u=determiners
         n=len(self.sys.x)
         m=len(self.sys.u)
         nC=len(self.sys.contact_points)
@@ -123,6 +144,32 @@ class contact_point:
         h=np.vstack((h1,h2))
         return (H,h)
     
+    def _forces_no_contact_psi_greater(self,determiners):
+        """
+        The constraints are as follows:
+            * psi >= 0 --> (phi_x,phi_u)(x,u)+ phi_0 - phi_x*x0 - phi_u*u0 >= phi_epsilon
+            * f_n = 0 
+            * f_t = 0
+        """
+        assert len(determiners)==12 # This is hard coded. Wonder why I keep psi as one of them:D
+        x,u,phi,psi,v_phi,v_psi,phi_x,phi_u,psi_x,psi_u,v_psi_x,v_psi_u=determiners
+        n=len(self.sys.x)
+        m=len(self.sys.u)
+        nC=len(self.sys.contact_points)
+        # phi>=0
+        H1=-np.hstack((phi_x,phi_u))
+        h1=phi-np.dot(phi_x,x)-np.dot(phi_u,u)
+        # f=0
+        H2=np.zeros((4,m+n))
+        h2=np.zeros((4,1))
+#        print H2.shape,H1.shape
+        H2[:,n+m-2*nC+2*self.index:n+m-2*nC+2*(self.index+1)]=np.vstack((np.eye(2),-np.eye(2)))
+        H=np.vstack((H1,H2))
+        h=np.vstack((h1,h2))
+        return (H,h)
+    
+    
+    
     def _forces_sticking(self,determiners,v_epsilon=0.01,maximum_penetration=0.001):
         """
         The constraints are as follows:
@@ -131,8 +178,8 @@ class contact_point:
             * |f_T| < mu * f_n : This is a constraint on control
             * |v_psi| <= v_epsilon -> | (v_psi_x,v_psi_u)(x,u) +v_psi_0 - (v_psi_x,v_psi_u)(x_0,u_0) | <= v_epsilon
         """
-        assert len(determiners)==10 # This is hard coded. Wonder why I keep psi as one of them:D
-        x,u,phi,psi,v_phi,v_psi,phi_x,phi_u,v_psi_x,v_psi_u=determiners
+        assert len(determiners)==12 # This is hard coded. Wonder why I keep psi as one of them:D
+        x,u,phi,psi,v_phi,v_psi,phi_x,phi_u,psi_x,psi_u,v_psi_x,v_psi_u=determiners
         # Some Logistics
         n=len(self.sys.x)
         m=len(self.sys.u)
@@ -185,8 +232,8 @@ class contact_point:
             * f_T = mu * f_n : This is a constraint on control - sliding in the direction of v_psi
             * v_psi >=v_epsilon -> (v_psi_x,v_psi_u)(x,u) +v_psi_0 - (v_psi_x,v_psi_u)(x_0,u_0)  >= v_epsilon
         """
-        assert len(determiners)==10 # This is hard coded. Wonder why I keep psi as one of them:D
-        x,u,phi,psi,v_phi,v_psi,phi_x,phi_u,v_psi_x,v_psi_u=determiners
+        assert len(determiners)==12 # This is hard coded. Wonder why I keep psi as one of them:D
+        x,u,phi,psi,v_phi,v_psi,phi_x,phi_u,psi_x,psi_u,v_psi_x,v_psi_u=determiners
         # Some Logistics
         n=len(self.sys.x)
         m=len(self.sys.u)
@@ -235,8 +282,8 @@ class contact_point:
             * f_T = mu * f_n : This is a constraint on control - sliding in the direction of v_psi
             * v_psi >=v_epsilon -> (v_psi_x,v_psi_u)(x,u) +v_psi_0 - (v_psi_x,v_psi_u)(x_0,u_0)  >= v_epsilon
         """
-        assert len(determiners)==10 # This is hard coded. Wonder why I keep psi as one of them:D
-        x,u,phi,psi,v_phi,v_psi,phi_x,phi_u,v_psi_x,v_psi_u=determiners
+        assert len(determiners)==12 # This is hard coded. Wonder why I keep psi as one of them:D
+        x,u,phi,psi,v_phi,v_psi,phi_x,phi_u,psi_x,psi_u,v_psi_x,v_psi_u=determiners
         # Some Logistics
         n=len(self.sys.x)
         m=len(self.sys.u)
@@ -304,7 +351,7 @@ class contact_point:
             z=extract_point(D_n,i)
             q=extract_point(E_n,i)
             J_n,J_t,J_n_x,J_t_x=self.sys._extract(q)
-            (H1,h1)=self._forces_no_contact(z)
+            (H1,h1)=self._forces_no_contact_phi(z)
             (H2,h2)=self._forces_sticking(z)
             (H3,h3)=self._force_slide_positive(z)
             (H4,h4)=self._force_slide_negative(z)
@@ -332,14 +379,9 @@ class contact_point:
         n,m,nC=len(self.sys.x),len(self.sys.u),len(self.sys.contact_points)
         fn0,ft0=u0[m-2*nC+2*self.index,0],u0[m-2*nC+2*self.index+1,0]
         J_n,J_t,J_n_x,J_t_x=Jacobian_numbers[0:4]
-#        print J_n
-#        print J_t
-#        print J_n_x
-#        print J_t_x
         A= J_n_x*fn0 + J_t_x*ft0
         B=np.zeros((n,m))
         B[:,m-2*nC+2*self.index:m-2*nC+2*(self.index+1)]=np.hstack((J_n.reshape(n,1),J_t.reshape(n,1)))
-#        print x0.shape,A.shape
         c=-np.dot(A,x0)
         # Bring epsilon in!
         H_eps=np.vstack((np.eye(n+m),-np.eye(n+m)))
@@ -347,11 +389,8 @@ class contact_point:
         h_eps=np.vstack((xu0+epsilon_confidence,-xu0+epsilon_confidence))
         H_new=np.vstack((H,H_eps))
         h_new=np.vstack((h,h_eps))
-        (H_can,h_can)=canonical_polytope(H_new,h_new)
-        assert 1==1
-#        print H,h,h-np.dot(H,xu0)
-#        assert all(np.dot(H,xu0)<=h)==True
-#        raise NotImplementedError
+#        (H_can,h_can)=canonical_polytope(H_new,h_new)
+        H_can,h_can=H_new,h_new
         return linear_cell(A,B,c,polytope(H_can,h_can))
     
     def construct_PWA_cell(self,polytopes_dict,Jacobian_numbers,x0,u0,epsilon_confidence):
@@ -377,7 +416,7 @@ class contact_point:
         Arguments:
             fn= nominal force
             ft= tangential force
-            fn_dummy= if nominal force is zero (no contact), what force should be considered if contact unexpectedely occurs?
+            fn_dummy= if nominal force is zero (no contact), what force should be considered if contact unexpectdly occurs?
         """
         F={}
         if self.friction*fn>abs(ft): # Sticking
@@ -385,12 +424,12 @@ class contact_point:
             F["ST"]=(fn,ft)
             F["SP"]=(fn,self.friction*fn)
             F["SN"]=(fn,-self.friction*fn)
-        elif self.friction*fn<ft: # Sldiing highly positive!
+        elif self.friction*fn<ft: # Sliding highly positive!
             F["NC"]=(0,0)
             F["ST"]=(fn,self.friction*fn)
             F["SP"]=(fn,ft)
             F["SN"]=(fn,-self.friction*fn)        
-        elif -self.friction*fn>-ft: # Sldiing highly negative!
+        elif -self.friction*fn>-ft: # Sliding highly negative!
             F["NC"]=(0,0)
             F["ST"]=(fn,-self.friction*fn)
             F["SP"]=(fn,self.friction*fn)
