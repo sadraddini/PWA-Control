@@ -62,4 +62,5 @@ dynamical_matrices=mysystem._evaluate_dynamical_matrices(Eta)
 
 C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,name="contact point")
 C1._contact_geometery_all()
+C1._contact_forces_all()
 H,h=C1.Evaluate_polyhedral_matrices(dynamical_matrices,Eta)

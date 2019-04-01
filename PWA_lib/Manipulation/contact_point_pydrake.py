@@ -86,6 +86,64 @@ class contact_point_symbolic_2D:
         self.H=H
         self.h=h
     
+
+    """
+    Contact Forces: These are just numbers for 2D
+    """
+    def _contact_forces_no_contact(self):
+        """
+        lambda_n = 0
+        lambda_t = 0
+        """
+        N=self.sys.x.shape[0]+self.sys.u.shape[0]
+        H_lambda=np.vstack((np.eye(2),-np.eye(2)))
+        h=np.zeros((4,1))
+        H=np.zeros((4,N+self.sys.u_lambda.shape[0]))
+        H[:,N+self.index*2:N+(self.index+1)*2]=H_lambda
+        return H,h
+
+    def _contact_forces_sticking(self):
+        """
+        lambda_n >= 0
+        |lambda_t| <= mu * lambda_n
+        """
+        N=self.sys.x.shape[0]+self.sys.u.shape[0]
+        H_lambda=np.array([[-1,0],[-self.friction,1],[-self.friction,-1]])
+        h=np.zeros((3,1))
+        H=np.zeros((3,N+self.sys.u_lambda.shape[0]))
+        H[:,N+self.index*2:N+(self.index+1)*2]=H_lambda
+        return H,h
+
+    def _contact_forces_sliding_positive(self):
+        """
+        lambda_n >= 0
+        lambda_t =  mu * lambda_n
+        """
+        N=self.sys.x.shape[0]+self.sys.u.shape[0]
+        H_lambda=np.array([[-1,0],[-self.friction,1],[self.friction,-1]])
+        h=np.zeros((3,1))
+        H=np.zeros((3,N+self.sys.u_lambda.shape[0]))
+        H[:,N+self.index*2:N+(self.index+1)*2]=H_lambda
+        return H,h     
+
+    def _contact_forces_sliding_negative(self):
+        """
+        lambda_n >= 0
+        lambda_t = - mu * lambda_n
+        """
+        N=self.sys.x.shape[0]+self.sys.u.shape[0]
+        H_lambda=np.array([[-1,0],[self.friction,1],[-self.friction,-1]])
+        h=np.zeros((3,1))
+        H=np.zeros((3,N+self.sys.u_lambda.shape[0]))
+        H[:,N+self.index*2:N+(self.index+1)*2]=H_lambda
+        return H,h  
+    
+    def _contact_forces_all(self):
+        self.H["forces","no_contact"],self.h["forces","no_contact"]=self._contact_forces_no_contact()
+        self.H["forces","sticking"],self.h["forces","sticking"]=self._contact_forces_sticking()
+        self.H["forces","sliding_positive"],self.h["forces","sliding_positive"]=self._contact_forces_sliding_positive()
+        self.H["forces","sliding_negative"],self.h["forces","sliding_negative"]=self._contact_forces_sliding_negative()        
+    
     """
     Numerical Functions
     """
@@ -110,9 +168,12 @@ class contact_point_symbolic_2D:
         """
         H_n,h_n={},{}
         for contact_mode in ["no_contact","sticking","sliding_positive","sliding_negative"]:
-            print contact_mode
-            print self.H[contact_mode].shape,type(self.H[contact_mode])
             H=sym.Evaluate(self.H[contact_mode],Eta)
             h=sym.Evaluate(self.h[contact_mode],Eta)
             H_n[contact_mode],h_n[contact_mode]=self.time_stepping_geometrical_constraint(H,h,dynamical_matrices)
+            H_n[contact_mode]=np.vstack((H_n[contact_mode],self.H["forces",contact_mode]))
+            h_n[contact_mode]=np.vstack((h_n[contact_mode],self.h["forces",contact_mode]))
+#            print contact_mode
+#            print self.H[contact_mode].shape,type(self.H[contact_mode])
+#            print H_n[contact_mode].shape
         return H_n,h_n
