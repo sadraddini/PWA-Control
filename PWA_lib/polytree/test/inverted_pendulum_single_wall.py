@@ -96,7 +96,7 @@ font = {'family': 'serif',
 
 N=50
 list_of_samples=[np.random.random((2,1))*np.array([0.24,2]).reshape(2,1)+np.array([-0.12,-1]).reshape(2,1) for i in range(N)]
-mytree.construct_tree(list_of_samples,T_start=20,T_max=51,eps_point=0.0,eps_poly=0.1)
+mytree.construct_tree(list_of_samples,T_start=20,T_max=21,eps_point=0.0,eps_poly=0.1)
 
 def visualize_tree(tree):
     fig,ax=plt.subplots()

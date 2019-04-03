@@ -16,7 +16,7 @@ from pypolycontain.lib.polytope import polytope
 from pypolycontain.lib.zonotope import zonotope
 
 
-def point_trajectory(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[]):
+def point_trajectory_sPWA(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[]):
     """
     Description: point Trajectory Optimization
     Inputs:
@@ -40,14 +40,13 @@ def point_trajectory(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[
     delta_PWA=model.addVars([(t,n,i) for t in range(T) for n in system.list_of_sum_indices \
                              for i in system.list_of_modes[n]],vtype=GRB.BINARY,name="delta_pwa")
     model.update()
-    # Initial Condition
     
+    # Initial Condition    
     print "inside function epsilon is",eps,"initial",x0.T
     for j in range(system.n):
 #        model.addConstr(x[0,j]<=x0[j,0]+eps*system.scale[j])
 #        model.addConstr(x[0,j]>=x0[j,0]-eps*system.scale[j])
          model.addConstr(x[0,j]==x0[j,0])
-         print "added"
     
     # Convexhull Dynamics
     model.addConstrs(x[t,j]==x_PWA.sum(t,n,"*",j) for t in range(T+1) for j in range(system.n)\
@@ -129,6 +128,110 @@ def point_trajectory(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[
         return (x_num,u_num,delta_PWA_num,mu_num,True)
 
 
+
+def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[]):
+    """
+    Description: point Trajectory Optimization
+    Inputs:
+        system: control system from hard contact time-stepping with convex hull method
+        x_0: initial point
+        T= trajectory length
+        list_of_goals: reaching one of the goals is enough. Each goal is an AH_polytope
+        eps= vector, box for how much freedom is given to deviate from x_0 in each direction
+    Method:
+        Uses convexhull formulation
+    """
+    t_start=time.time()
+    model=Model("Point Trajectory Optimization using TISHCOM Formulation")
+    x=model.addVars(range(T+1),range(system.n),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x")
+    u=model.addVars(range(T),range(system.m_u),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u")
+    u_lambda=model.addVars(range(T),range(system.m_lambda),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_lambda")
+    mu=model.addVars(list_of_goals,vtype=GRB.BINARY,name="mu")
+    _p=model.addVars(tuplelist([(goal,j) for goal in list_of_goals for j in range(goal.G.shape[1])]),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="p")
+    ## tau, T Variables
+    x_time=model.addVars(range(T+1),system.Eta,range(system.n),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x_t")
+    u_time=model.addVars(range(T),system.Eta,range(system.m_u),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_t")
+    u_lambda_time=model.addVars(range(T),system.Eta,range(system.m_lambda),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="lambda_t")
+    delta_time=model.addVars(range(T),system.Eta,vtype=GRB.BINARY,name="delta_t")    
+    ## TISCHOM Variables
+    x_TISHCOM=model.addVars([(t,tau,i,sigma,j) for t in range(T) for tau in system.Eta for i in system.list_of_contact_points \
+                         for sigma in i.Sigma for j in range(system.n)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x_TISHCOM")
+    u_TISHCOM=model.addVars([(t,tau,i,sigma,j) for t in range(T) for tau in system.Eta for i in system.list_of_contact_points \
+                         for sigma in i.Sigma for j in range(system.m_u)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_TISHCOM")
+    lambda_TISHCOM=model.addVars([(t,tau,i,sigma,j) for t in range(T) for tau in system.Eta for i in system.list_of_contact_points \
+                         for sigma in i.Sigma for j in range(system.m_lambda)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="lambda_TISCHOM")
+    delta_TISHCOM=model.addVars([(t,tau,i,sigma) for t in range(T) for tau in system.Eta for i in system.list_of_contact_points \
+                         for sigma in i.Sigma],vtype=GRB.BINARY,name="delta_TISHCOM")
+    model.update()
+    # Initial Condition    
+    print "inside function epsilon is",eps,"initial",x0.T
+    for j in range(system.n):
+#        model.addConstr(x[0,j]<=x0[j,0]+eps*system.scale[j])
+#        model.addConstr(x[0,j]>=x0[j,0]-eps*system.scale[j])
+         model.addConstr(x[0,j]==x0[j,0])
+ 
+    # Equation a: Mode Constaints
+    for t in range(T):
+        for tau in  system.Eta:
+            for i in system.list_of_contact_points:
+                for sigma in i.Sigma:
+                    for row in range(system.E[tau,i,sigma].shape[0]):
+                        a_x=LinExpr([(system.E[tau,i,sigma][row,k],x_TISHCOM[t,tau,i,sigma,k]) for k in range(system.n)])
+                        a_u=LinExpr([(system.E[tau,i,sigma][row,k],u_TISHCOM[t,tau,i,sigma,k])  for k in range(system.m_u)])
+                        a_lambda=LinExpr([(system.E[tau,i,sigma][row,k],lambda_TISHCOM[t,tau,i,sigma,k]) for k in range(system.m_lambda)])
+                        model.addConstr(a_x+a_u+a_lambda <= system.e[tau,i,sigma])
+                        
+    # Equation b: Convexhull Dynamics
+    model.addConstrs(x_time[t,tau,j]==x_TISHCOM.sum(t,tau,i,"*",j) for t in range(T) for tau in system.Eta \
+                                         for i in  system.list_of_contact_points for j in range(system.n))
+    model.addConstrs(u_time[t,tau,j]==u_TISHCOM.sum(t,tau,i,"*",j) for t in range(T) for tau in system.Eta \
+                                         for i in  system.list_of_contact_points for j in range(system.m_u))
+    model.addConstrs(u_lambda_time[t,tau,j]==lambda_TISHCOM.sum(t,"*","*",j) for t in range(T) for tau in system.Eta \
+                                         for i in  system.list_of_contact_points for j in range(system.m_lambda))
+    model.addConstrs(delta_time[t,tau]==delta_TISHCOM.sum(t,i,"*") for t in range(T) for tau in system.Eta \
+                                         for i in  system.list_of_contact_points)
+    
+    # Equation c: Evolution
+    for t in range(T):
+        for row in range(system.n):
+            a_x=LinExpr([(system.A[tau][row,k],x_time[t,tau,k]) for tau in system.Eta for k in range(system.n)])
+            a_u=LinExpr([(system.B_u[tau][row,k],u_time[t,tau,k]) for tau in system.Eta for k in range(system.m_u)])
+            a_lambda=LinExpr([(system.B_lambda[tau][row,k],u_lambda_time[t,tau,k]) for tau in system.Eta for k in range(system.m_lambda)])
+            model.addConstr(x[t+1,row]==a_x+a_u+a_lambda)
+    
+    # Equation d: Now for tau
+    model.addConstrs(x[t,j]==x_time.sum(t,"*",j) for t in range(T) for j in range(system.n))
+    model.addConstrs(u[t,j]==u_time.sum(t,"*",j) for t in range(T) for j in range(system.m_u))
+    model.addConstrs(u_lambda[t,j]==u_lambda_time.sum(t,"*",j) for t in range(T) for j in range(system.m_lambda))
+    model.addConstrs(1==delta_time.sum(t,"*") for t in range(T))
+    
+    # Goal Constraints
+    for j in range(system.n):
+        L=LinExpr()
+        L.add(LinExpr([(goal.G[j,k],_p[goal,k]) for goal in list_of_goals for k in range(goal.G.shape[1])]))
+        L.add(LinExpr([(goal.x[j,0],mu[goal]) for goal in list_of_goals]))
+        model.addConstr(L==x[T,j])
+    model.addConstr(mu.sum()==1)
+    for goal in list_of_goals:
+        for j in range(goal.G.shape[1]):
+            model.addConstr(_p[goal,j]<=mu[goal])
+            model.addConstr(-_p[goal,j]<=mu[goal])
+    # Cost Engineering
+    print "model built in",time.time()-t_start," seconds"
+    # Optimize
+    model.write("point_trajectory_time_stepping.lp")
+    J=QuadExpr(sum([u[t,j]*u[t,j] for j in optimize_controls_indices for t in range(T)]))
+    model.setParam("MIPfocus",0)
+    model.setObjective(J,GRB.MINIMIZE)
+    model.setParam('TimeLimit', 60)
+    model.optimize()
+    x_n={t:np.array([x[t,i].X for i in range(system.n)]) for t in range(T)}
+    u_n={t:np.array([u[t,i].X for i in range(system.m_u)]) for t in range(T)}
+    lambda_n={t:np.array([u_lambda[t,i].X for i in range(system.m_lambda)]) for t in range(T)}
+#    delta_n={t:np.array([x[t,i].X for i in range(system.n)]) for t in range(T)}
+    return x_n,u_n,lambda_n
+
+            
     
 def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[]):
     """

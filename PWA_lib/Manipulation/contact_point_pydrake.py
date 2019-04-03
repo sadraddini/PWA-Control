@@ -162,18 +162,20 @@ class contact_point_symbolic_2D:
         E=np.hstack((E_x,E_u,E_lambda))
         return (E,e)
     
-    def Evaluate_polyhedral_matrices(self,dynamical_matrices,Eta):
+    def Evaluate_polyhedral_matrices(self,dynamical_matrices,Eta,epsilon=0):
         """
         H,h are dictionary of different volumes
         """
         H_n,h_n={},{}
+        N=self.sys.x.shape[0]+self.sys.u.shape[0]+self.sys.u_lambda.shape[0]
         for contact_mode in ["no_contact","sticking","sliding_positive","sliding_negative"]:
             H=sym.Evaluate(self.H[contact_mode],Eta)
             h=sym.Evaluate(self.h[contact_mode],Eta)
             H_n[contact_mode],h_n[contact_mode]=self.time_stepping_geometrical_constraint(H,h,dynamical_matrices)
             H_n[contact_mode]=np.vstack((H_n[contact_mode],self.H["forces",contact_mode]))
             h_n[contact_mode]=np.vstack((h_n[contact_mode],self.h["forces",contact_mode]))
-#            print contact_mode
-#            print self.H[contact_mode].shape,type(self.H[contact_mode])
-#            print H_n[contact_mode].shape
+            # Box Constraints
+            if epsilon!=0:
+                H_n[contact_mode]=np.vstack((H_n[contact_mode],np.eye(N),-np.eye(N)))
+                h_n[contact_mode]=np.vstack((h_n[contact_mode],np.ones((N,1))*epsilon))            
         return H_n,h_n

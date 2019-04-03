@@ -51,6 +51,11 @@ class system_symbolic:
         self.u=np.hstack((self.u_torques,self.u_m))
         # self.tau_c
         self.tau_c=np.dot(self.C,self.v_o)
+    
+    def _build_dimensions(self):
+        # Dimensions
+        self.n,self.m_u,self.m_lambda=len(self.x),len(self.u),len(self.u_lambda)
+        
 
         
     def _set_mass_matrix_inverse(self,M_inv): 

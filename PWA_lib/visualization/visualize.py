@@ -14,7 +14,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 
 
-from pyinpolytope.utilities.utils import vertices_cube as vcube
+from pypolycontain.utils.utils import vertices_cube as vcube
 
 
 def add_tube(ax,x,G,eps=0,list_of_dimensions=[0,1],axis=0):
