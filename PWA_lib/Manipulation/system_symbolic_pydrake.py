@@ -14,7 +14,7 @@ class system_symbolic:
     def __init__(self,name,d):
         self.name=name+" (%dD)"%d
         self.d=d # Dimensions
-        self.contact_points=[] # list of contact points
+        self.list_of_contact_points=[] # list of contact points
         # Variables
         self.q_o=np.empty(0,dtype="object") # Position vector of the Object(s)
         self.q_m=np.empty(0,dtype="object") # Position vector of the Manipulator(s): those controlled by velocity commands
@@ -31,12 +31,9 @@ class system_symbolic:
         # Dynamics
         self.dynamics=dynamics(None,None,None,None)
                 
-        
-
-        
     def __repr__(self):
         return self.name+" with %d states, %d controls, and %d contact points"\
-            %(len(self.x),len(self.u),len(self.contact_points))
+            %(len(self.x),len(self.u),len(self.list_of_contact_points))
             
     def _build_state_space(self):
         """ Build the system's state and control space"""
@@ -56,7 +53,6 @@ class system_symbolic:
         # Dimensions
         self.n,self.m_u,self.m_lambda=len(self.x),len(self.u),len(self.u_lambda)
         
-
         
     def _set_mass_matrix_inverse(self,M_inv): 
         # Inverse of Mass Matrix is needed
