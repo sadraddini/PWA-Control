@@ -59,7 +59,7 @@ class contact_point_symbolic_2D:
         phi < -tolerance_phi, -tolerance_psi<psi_dot<tolerance_psi
         """
         psi_dot=self.sys._time_derivative(np.array([self.psi]))[0]
-        zeta=np.array([-self.phi-tolerance_phi,self.phi+tolerance_phi,-psi_dot-tolerance_psi,psi_dot-tolerance_psi])
+        zeta=np.array([-self.phi-tolerance_phi,self.phi,-psi_dot-tolerance_psi,psi_dot-tolerance_psi])
         return self.sys._polyhedrize_constraints_symbolic(zeta)
     
     def _contact_geometry_sliding_positive(self,tolerance_phi=10**-6,tolerance_psi=10**-6):
@@ -67,7 +67,7 @@ class contact_point_symbolic_2D:
         phi <=-tolerance_phi psi_dot>tolerance_psi
         """
         psi_dot=self.sys._time_derivative(np.array([self.psi]))[0]
-        zeta=np.array([-self.phi-tolerance_phi,self.phi+tolerance_phi,-psi_dot+tolerance_psi])
+        zeta=np.array([-self.phi-tolerance_phi,self.phi,-psi_dot+tolerance_psi])
         return self.sys._polyhedrize_constraints_symbolic(zeta)
     
     def _contact_geometry_sliding_negative(self,tolerance_phi=10**-6,tolerance_psi=10**-6):
@@ -75,7 +75,7 @@ class contact_point_symbolic_2D:
         phi <=-tolerance_phi psi_dot<-tolerance_psi
         """
         psi_dot=self.sys._time_derivative(np.array([self.psi]))[0]
-        zeta=np.array([-self.phi-tolerance_phi,self.phi+tolerance_phi,psi_dot+tolerance_psi])
+        zeta=np.array([-self.phi-tolerance_phi,self.phi,psi_dot+tolerance_psi])
         return self.sys._polyhedrize_constraints_symbolic(zeta)
     
     def _contact_geometery_all(self):
@@ -140,10 +140,11 @@ class contact_point_symbolic_2D:
         return H,h  
     
     def _contact_forces_all(self):
-        self.H["forces","no_contact"],self.h["forces","no_contact"]=self._contact_forces_no_contact()
-        self.H["forces","sticking"],self.h["forces","sticking"]=self._contact_forces_sticking()
-        self.H["forces","sliding_positive"],self.h["forces","sliding_positive"]=self._contact_forces_sliding_positive()
-        self.H["forces","sliding_negative"],self.h["forces","sliding_negative"]=self._contact_forces_sliding_negative()        
+        self.H_cone,self.h_cone={},{}
+        self.H_cone["forces","no_contact"],self.h_cone["forces","no_contact"]=self._contact_forces_no_contact()
+        self.H_cone["forces","sticking"],self.h_cone["forces","sticking"]=self._contact_forces_sticking()
+        self.H_cone["forces","sliding_positive"],self.h_cone["forces","sliding_positive"]=self._contact_forces_sliding_positive()
+        self.H_cone["forces","sliding_negative"],self.h_cone["forces","sliding_negative"]=self._contact_forces_sliding_negative()        
     
     """
     Numerical Functions
@@ -168,14 +169,14 @@ class contact_point_symbolic_2D:
         H,h are dictionary of different volumes 2D
         """
         H_n,h_n={},{}
-        self.Sigma=["no_contact","sticking","sliding_positive","sliding_negative"]
+        self.Sigma=self.H.keys()
         N=self.sys.x.shape[0]+self.sys.u.shape[0]+self.sys.u_lambda.shape[0]
         for contact_mode in self.Sigma:
             H=sym.Evaluate(self.H[contact_mode],Eta)
             h=sym.Evaluate(self.h[contact_mode],Eta)
             H_n[contact_mode],h_n[contact_mode]=self.time_stepping_geometrical_constraint(H,h,dynamical_matrices)
-            H_n[contact_mode]=np.vstack((H_n[contact_mode],self.H["forces",contact_mode]))
-            h_n[contact_mode]=np.vstack((h_n[contact_mode],self.h["forces",contact_mode]))
+            H_n[contact_mode]=np.vstack((H_n[contact_mode],self.H_cone["forces",contact_mode]))
+            h_n[contact_mode]=np.vstack((h_n[contact_mode],self.h_cone["forces",contact_mode]))
             # Box Constraints
             if len(epsilon)!=1:
                 H_n[contact_mode]=np.vstack((H_n[contact_mode],np.eye(N),-np.eye(N)))

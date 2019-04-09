@@ -6,7 +6,7 @@ Created on Thu Apr  4 16:06:32 2019
 @author: sadra
 """
 
-class system_HACTS:
+class system_hard_contact_PWA_numeric:
     def __init__(self,symbolic_system):
         self.A={}
         self.B_u={}

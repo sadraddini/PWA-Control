@@ -41,13 +41,20 @@ class system_symbolic:
         self.v_o=np.array([sym.Variable(str(a.__repr__())[10:str(a.__repr__()).index(',')-1]+"_dot") for a in self.q_o])
         self.u_m=np.array([sym.Variable("u_"+str(a.__repr__())[10:str(a.__repr__()).index(',')-1]) for a in self.q_m])
 #        self.u_m=np.array([sym.Variable("u_m%d"%i) for i in range(len(self.q_m))])
-#        self.u_lambda=np.array([sym.Variable("lambda%d"%c.name) for c in self.contact_points])
+        if self.d==2:
+            self.u_lambda=np.array([[sym.Variable("lambda_%s_n"%c.name),sym.Variable("lambda_%s_t"%c.name)] \
+                                     for c in self.list_of_contact_points]).reshape(2*len(self.list_of_contact_points))
+        else:
+            raise NotImplementedError
         self.q=np.hstack((self.q_o,self.q_m))
         self.x=np.hstack((self.q_o,self.q_m,self.v_o))
 #        self.u=np.hstack((self.u_torques,self.u_m,self.u_lambda))
         self.u=np.hstack((self.u_torques,self.u_m))
         # self.tau_c
         self.tau_c=np.dot(self.C,self.v_o)
+        # The Jacobian
+        self.J=np.hstack(([c.J for c in self.list_of_contact_points]))
+
     
     def _build_dimensions(self):
         # Dimensions
@@ -121,6 +128,14 @@ class system_symbolic:
         B_lambda_n=np.dot(A_n,sym.Evaluate(D.B_lambda,Eta))
         c_n=np.dot(A_n,sym.Evaluate(D.c,Eta))
         return dynamics(A_n,B_u_n,B_lambda_n,c_n)
+    
+    def build_and_linearize(self):
+        self._build_state_space()
+        self._linearize_dynamics_symbolic()
+        for C in self.list_of_contact_points:
+            C._contact_geometery_all()
+            C._contact_forces_all()
+        self._build_dimensions()
     
     
 
