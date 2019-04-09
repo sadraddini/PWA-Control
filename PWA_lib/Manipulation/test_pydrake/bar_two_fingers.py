@@ -76,15 +76,17 @@ Eta.dict_of_values={x:0,y:0,theta:0,x_1:1,x_2:-1,y_1:0,y_2:0,
      mysystem.u_m[0]:1,mysystem.u_m[1]:0,mysystem.u_m[2]:1,mysystem.u_m[3]:0,
      mysystem.h:0.02}
 
-epsilon=np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,10,10,10,10]).reshape(18,1)
+epsilon=np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,50,1000,50,1000]).reshape(18,1)
 sys=system_HACTS(mysystem)
 sys.add_environment(Eta,epsilon)
 
-x_goal=np.array([0,0,0.0,1,0.00,-1,0,0,0,0]).reshape(10,1)
+y_goal=0.5
+#x_goal=np.array([0,y_goal,0.0,1,y_goal,-1,y_goal,0,0,0]).reshape(10,1)
+x_goal=np.array([0,0,0.0,1,0,-1,0,0,0,0]).reshape(10,1)
 sys.goal=zonotope(x_goal.reshape(10,1),0.0*np.eye(10))
-x0=np.array([0,0.0,0.0,1,0.00,-1,0.00,1,0,0]).reshape(10,1)
-T=30
-x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T)
+x0=np.array([0.5,0,0.0,1,0.00,-1,0.00,0,0,0]).reshape(10,1)
+T=50
+x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[])
 
 def env_q(x):
     return {mysystem.q[i]:x[i] for i in range(len(mysystem.q))}
@@ -123,11 +125,6 @@ def animate(X,ax1):
     fig.gca().set_aspect('equal')
     bar=[patches.Polygon(np.array([[x_left,x_left_bar,x_right_bar,x_right],[y_left,y_left_bar,y_right_bar,y_right]]).reshape(2,4).T, True)]
     ax1.add_collection(PatchCollection(bar,color=(0.8,0.3,0.4),alpha=0.8,edgecolor=(0,0,0)))
-#    xf_1=x+x_1*np.cos(theta)+y_1*np.sin(theta)
-#    xf_2=x+x_2*np.cos(theta)+y_2*np.sin(theta)
-#    yf_1=y+x_1*np.sin(theta)-y_1*np.cos(theta)-0.07
-#    yf_2=y+x_2*np.sin(theta)-y_2*np.cos(theta)-0.07
-#    ax1.plot([xf_1,xf_2],[yf_1,yf_2],'^',linewidth=3,markersize=10)
     ax1.plot([x_1,x_2],[y_1-0.07,y_2-0.07],'^',linewidth=3,markersize=10)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.5)
     

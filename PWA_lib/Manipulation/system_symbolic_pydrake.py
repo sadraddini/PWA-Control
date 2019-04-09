@@ -85,28 +85,26 @@ class system_symbolic:
         # First compute A matrix
         A_11=np.eye(self.q.shape[0])
         A_12=np.vstack((-self.h*np.eye(self.q_o.shape[0]),np.zeros((self.q_m.shape[0],self.v_o.shape[0]))))
-        alpha=sym.Jacobian(self.tau_c,self.q)-sym.Jacobian(self.tau_g,self.q)-\
+        alpha_1=sym.Jacobian(self.tau_c,self.q)-sym.Jacobian(self.tau_g,self.q)-\
                 sum([sym.Jacobian(self.B[:,i]*self.u_torques[i],self.q) for i in range(self.B.shape[1])])-\
                 sum([sym.Jacobian(self.J[:,i]*self.u_lambda[i],self.q) for i in range(self.J.shape[1])])
-        A_21=self.h*np.dot(self.M_inv,alpha)
-        beta=sym.Jacobian(self.tau_c,self.v_o)-sum([ 
+        A_21=self.h*np.dot(self.M_inv,alpha_1)
+        alpha_2=sym.Jacobian(self.tau_c,self.v_o)-sum([ 
                 sym.Jacobian(self.B[:,i]*self.u_torques[i],self.v_o) for i in range(self.B.shape[1])])
-        A_22=np.eye(self.v_o.shape[0])-self.h*np.dot(self.M_inv,beta)
+        A_22=np.eye(self.v_o.shape[0])-self.h*np.dot(self.M_inv,alpha_2)
         self.dynamics.A_inv=np.vstack ( ( np.hstack((A_11,A_12))  ,  np.hstack((A_21,A_22)) ) )
+
         
         self.dynamics.B_u_1=np.vstack((np.zeros((self.q.shape[0],self.B.shape[1])),self.h*self.B))
         self.dynamics.B_u_2=np.vstack((np.zeros((self.q_o.shape[0],self.q_m.shape[0])),\
                                        self.h*np.eye(self.q_m.shape[0]),\
                                        np.zeros((self.v_o.shape[0],self.q_m.shape[0]))))
-        
-#        print self.dynamics.B_u_1.shape
-#        print self.dynamics.B_u_2.shape
        
         self.dynamics.B_u=np.hstack((self.dynamics.B_u_1,self.dynamics.B_u_2))
         
         self.dynamics.B_lambda=np.vstack((np.zeros((self.q.shape[0],self.J.shape[1])),self.h*self.J))
 
-        gamma=-self.tau_c+np.dot(sym.Jacobian(self.tau_c,self.q),self.q)+\
+        alpha_3=-self.tau_c+np.dot(sym.Jacobian(self.tau_c,self.q),self.q)+\
             np.dot(sym.Jacobian(self.tau_c,self.v_o),self.v_o)+\
             self.tau_g-np.dot(sym.Jacobian(self.tau_g,self.q),self.q)+\
             np.dot(self.B,self.u_torques)-\
@@ -114,7 +112,7 @@ class system_symbolic:
             sum([np.dot(sym.Jacobian(self.B[:,i],self.v_o),self.v_o)*self.u_torques[i] for i in range(self.B.shape[1])])-\
             sum([np.dot(sym.Jacobian(self.J[:,i],self.q),self.q)*self.u_lambda[i] for i in range(self.J.shape[1])])
         
-        self.dynamics.c=np.hstack((np.zeros(self.q.shape[0]),self.h*gamma))
+        self.dynamics.c=np.hstack((np.zeros(self.q.shape[0]),self.h*alpha_3))
     
     def _evaluate_dynamical_matrices(self,Eta):
         D=self.dynamics
