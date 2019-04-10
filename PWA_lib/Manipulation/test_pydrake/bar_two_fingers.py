@@ -72,7 +72,7 @@ y_goal=0.5
 #x_goal=np.array([0,y_goal,0.0,1,y_goal,-1,y_goal,0,0,0]).reshape(10,1)
 x_goal=np.array([0,0,0.0,1,0,-1,0,0,0,0]).reshape(10,1)
 sys.goal=zonotope(x_goal.reshape(10,1),np.diag([0,0,0,0,0,0,0,0,0,0]))
-x0=np.array([0.0,0,0.0,1,0.00,-1,-0.0,1.2,0,0]).reshape(10,1)
+x0=np.array([0.0,0,0.0,1,0.00,-1,-0.0,1.2,0,1]).reshape(10,1)
 T=20
 x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3])
 
@@ -91,35 +91,51 @@ import matplotlib.patches as patches
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 
-def animate(X,ax1):
+def animate(X,ax1,fig):
     x,y,theta,x_1,y_1,x_2,y_2=X[0:7]
-    L=1.5
-    b=0.3
-    # x
-    x_left=x-L*np.cos(theta)
-    x_left_bar=x-L*np.cos(theta)-b*np.sin(theta)
-    x_right=x+L*np.cos(theta)
-    x_right_bar=x+L*np.cos(theta)-b*np.sin(theta)
-    # y
-    y_left=y-L*np.sin(theta)
-    y_left_bar=y_left+b*np.cos(theta)
-    y_right=y+L*np.sin(theta)
-    y_right_bar=y_right+b*np.cos(theta)
+    a=0.4
+    b=2
+    R=np.array([[np.cos(theta),-np.sin(theta)],[np.sin(theta),np.cos(theta)]])
     # Good now plot
     ax1.set_xlabel("x",fontsize=20)
     ax1.set_ylabel("y",fontsize=20)
-    ax1.set_xlim([-2*L,2*L])
-    ax1.set_ylim([-0.7,1.8])
+    ax1.set_xlim([-1.5*b,1.5*b])
+    ax1.set_ylim([-0.7,2])
     fig.gca().set_aspect('equal')
-    bar=[patches.Polygon(np.array([[x_left,x_left_bar,x_right_bar,x_right],[y_left,y_left_bar,y_right_bar,y_right]]).reshape(2,4).T, True)]
+    # Bar
+    up_right=np.array([x,y])+np.dot(R,[b,a])
+    down_right=np.array([x,y])+np.dot(R,[b,0])
+    down_left=np.array([x,y])+np.dot(R,[-b,0])
+    up_left=np.array([x,y])+np.dot(R,[-b,a])
+    bar=[patches.Polygon(np.array([[up_right[0],down_right[0],down_left[0],up_left[0]],[up_right[1],down_right[1],down_left[1],up_left[1]]]).reshape(2,4).T, True)]
     ax1.add_collection(PatchCollection(bar,color=(0.8,0.3,0.4),alpha=0.8,edgecolor=(0,0,0)))
-    ax1.plot([x_1,x_2],[y_1-0.07,y_2-0.07],'^',linewidth=3,markersize=10)
+    # Finger left
+    L,h=0.1,0.3
+    base_up,base_down,corner=np.array([x_1,y_1])+np.dot(R,[-L,-h]),np.array([x_1,y_1])+np.dot(R,[L,-h]),np.array([x_1,y_1])
+    finger_left=[patches.Polygon(np.array([[base_up[0],base_down[0],corner[0]],[base_up[1],base_down[1],corner[1]]]).reshape(2,3).T, True)]
+    ax1.add_collection(PatchCollection(finger_left,color=(0.2,0.2,0.8),alpha=0.8,edgecolor=(0,0,0)))
+    # Finger right
+    L,h=0.1,0.3
+    base_up,base_down,corner=np.array([x_2,y_2])+np.dot(R,[-L,-h]),np.array([x_2,y_2])+np.dot(R,[L,-h]),np.array([x_2,y_2])
+    finger_right=[patches.Polygon(np.array([[base_up[0],base_down[0],corner[0]],[base_up[1],base_down[1],corner[1]]]).reshape(2,3).T, True)]
+    ax1.add_collection(PatchCollection(finger_right,color=(0.2,0.2,0.8),alpha=0.8,edgecolor=(0,0,0)))    
+    # Star 
+    ax1.plot([x_1,x_2],[y_1,y_2],'*',linewidth=3,markersize=10)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.5)
-    
-for t in range(T+1):
-    fig,ax = plt.subplots()
-#    ax.set_title("Balancing t=%d \n Right finger: %s \n Left Finger: %s"%(t,mode_name[list_of_modes[t][1]],mode_name[list_of_modes[t][2]]))
-    animate(x[t],ax)
-    if t==-1:
-        ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
-    fig.savefig('figures/bar_%d.png'%t, dpi=100)
+
+def generate_figures():    
+    for t in range(T+1):
+        fig,ax = plt.subplots()
+        fig.set_size_inches(10, 8)
+        if t!=T:
+            ax.set_title(r'%d/%d Balancing the Rod'%(t,T)+'\n'+
+                         r'$\lambda^{lF}_n: %0.1f * \lambda^{rF}_n: %0.1f $'
+                         %(u_lambda[t][0],u_lambda[t][2])
+                         +'\n'+r'$\lambda^{lF}_t: %0.1f * \lambda^{rF}_t: %0.1f $'
+                         %(u_lambda[t][1],u_lambda[t][3]))
+            animate(x[t],ax,fig)
+        if t==-1:
+            ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
+        fig.savefig('figures/bar_%d.png'%t, dpi=100)
+
+generate_figures()

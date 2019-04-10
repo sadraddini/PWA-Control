@@ -42,6 +42,11 @@ class contact_point_symbolic_2D:
         self.K=K # Spring coefficient, used for soft contact
         self.sys.list_of_contact_points.append(self)
         self.name=name+str(len(self.sys.list_of_contact_points))#+" contact model: "+self.contact_model
+        # Contact Modes to Consider
+        self.no_contact=True
+        self.sticking=True
+        self.sliding=True
+        
         
     def __repr__(self):
         return self.name
@@ -80,10 +85,13 @@ class contact_point_symbolic_2D:
     
     def _contact_geometery_all(self):
         H,h={},{}
-        H["no_contact"],h["no_contact"]=self._contact_geometry_no_contact()
-        H["sticking"],h["sticking"]=self._contact_geometry_sticking()
-        H["sliding_positive"],h["sliding_positive"]=self._contact_geometry_sliding_positive()
-        H["sliding_negative"],h["sliding_negative"]=self._contact_geometry_sliding_negative()
+        if self.no_contact==True:
+            H["no_contact"],h["no_contact"]=self._contact_geometry_no_contact()
+        if self.sticking==True:
+            H["sticking"],h["sticking"]=self._contact_geometry_sticking()
+        if self.sliding==True:
+            H["sliding_positive"],h["sliding_positive"]=self._contact_geometry_sliding_positive()
+            H["sliding_negative"],h["sliding_negative"]=self._contact_geometry_sliding_negative()
         self.H=H
         self.h=h
     
