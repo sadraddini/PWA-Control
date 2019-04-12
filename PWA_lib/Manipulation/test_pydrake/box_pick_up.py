@@ -42,22 +42,23 @@ mysystem.M_inv=np.linalg.inv(mysystem.M)
 
 # Contact Point 1: The ground with left corner
 phi_1= y - a * sym.cos(theta) - b * sym.sin(theta)
-psi_1= x + a * sym.sin(theta) - b * sym.cos(theta)
+psi_1= - (x + a * sym.sin(theta) - b * sym.cos(theta) )
 J_1n=np.array([0,1,-b*sym.cos(theta)-a*sym.sin(theta)]).reshape(3,1)
-J_1t=-np.array([1,0,a*sym.cos(theta)+b*sym.sin(theta)]).reshape(3,1)
+J_1t=np.array([1,0,a*sym.cos(theta)+b*sym.sin(theta)]).reshape(3,1)
 J_1=np.hstack((J_1n,J_1t))
-C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.5,name="contact point")
+C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.8,name="contact point")
 C1.sliding=False
+#C1.sticking=False
 
 
 # Contact Point 2: The ground with right corner
 phi_2= y - a * sym.cos(theta) + b * sym.sin(theta)
-psi_2= x + a * sym.sin(theta) + b * sym.cos(theta)
+psi_2= - ( x + a * sym.sin(theta) + b * sym.cos(theta) )
 J_2n=np.array([0,1,b*sym.cos(theta)-a*sym.sin(theta)]).reshape(3,1)
-J_2t=-np.array([1,0,a*sym.cos(theta)-b*sym.sin(theta)]).reshape(3,1)
+J_2t=np.array([1,0,a*sym.cos(theta)-b*sym.sin(theta)]).reshape(3,1)
 J_2=np.hstack((J_2n,J_2t))
-C2=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.5,name="contact point")
-C2.sliding=False
+C2=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.8,name="contact point")
+#C2.sliding=False
 
 
 # Contact Point 3: Left finger
@@ -68,7 +69,7 @@ J_3t=np.array([-sym.sin(theta),sym.cos(theta),-b]).reshape(3,1)
 J_3=np.hstack((J_3n,J_3t))
 C3=contact_point_symbolic_2D(mysystem,phi=phi_3,psi=psi_3,J=J_3,friction=0.5,name="contact point")
 C3.sliding=False
-#C3.sticking=False
+C3.sticking=False
 
 # Contact Point 4: Right finger
 phi_4 = (x_2-x)*sym.cos(theta) + (y_2-y)*sym.sin(theta)- b 
@@ -88,23 +89,34 @@ Eta.dict_of_values={x:0,y:a,theta:0,x_1:-b,x_2:b,y_1:a,y_2:a,
      mysystem.u_lambda[0]:0,mysystem.u_lambda[1]:0,mysystem.u_lambda[2]:0,mysystem.u_lambda[3]:0,
      mysystem.u_lambda[4]:0,mysystem.u_lambda[5]:0,mysystem.u_lambda[6]:0,mysystem.u_lambda[7]:0,
      mysystem.u_m[0]:0,mysystem.u_m[1]:0,mysystem.u_m[2]:0,mysystem.u_m[3]:0,
-     mysystem.h:0.03}
+     mysystem.h:0.05}
 
 epsilon=np.array([20,20,20,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
 sys=system_numeric(mysystem)
 sys.add_environment(Eta,epsilon)
 
-up_shift=0.2
-right_shift=0.2
-theta_shift=0.1
-x_goal=np.array([right_shift,a+up_shift,theta_shift,-b+right_shift,a+up_shift,b+right_shift,a+up_shift,0,0,0]).reshape(10,1)
-x0=np.array([0,a,0,-b,a,b,a,0,0,0]).reshape(10,1)
-#x0=x_goal
-sys.goal=zonotope(x_goal.reshape(10,1),10*np.diag([0,0,0,1,1,1,1,1,1,1]))
-T=20
-x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[])
+if True:
+    up_shift=0
+    right_shift=0
+    theta_shift=0.3
+    x_goal=np.array([right_shift,a+up_shift,theta_shift,-b+right_shift,a+up_shift,b+right_shift,a+up_shift,0,0,0]).reshape(10,1)
+    x0=np.array([0,a,0,-b,a,b,a,0,0,0]).reshape(10,1)
+    #x0=x_goal
+    sys.goal=zonotope(x_goal.reshape(10,1),np.diag([1,1,0,1,1,1,1,1,1,1]))
+    T=15
+    x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
 
-
+if False:
+    up_shift=0.3
+    open_shift=0.2
+    theta_shift=0
+    x0=np.array([right_shift,a+up_shift,0,-b-open_shift,a+up_shift,b+open_shift,a+up_shift,0,0,0]).reshape(10,1)
+    x_goal=np.array([0,a+up_shift,0,-b,a,b,a,0,0,0]).reshape(10,1)
+    #x0=x_goal
+    sys.goal=zonotope(x_goal.reshape(10,1),np.diag([1,0,0,1,1,1,1,1,1,1]))
+    T=10
+    x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+    
 """
 Visualization
 """

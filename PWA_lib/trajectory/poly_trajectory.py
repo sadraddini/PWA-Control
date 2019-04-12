@@ -129,7 +129,7 @@ def point_trajectory_sPWA(system,x0,list_of_goals,T,eps=0,optimize_controls_indi
 
 
 
-def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[]):
+def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[],cost=2,time_limit=120):
     """
     Description: point Trajectory Optimization
     Inputs:
@@ -221,11 +221,21 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
     print "model built in",time.time()-t_start," seconds"
     # Optimize
     model.write("point_trajectory_time_stepping.lp")
-    J=QuadExpr(sum([u[t,j]*u[t,j] for j in optimize_controls_indices for t in range(T)]))
-    model.setParam("MIPfocus",0)
-    model.setObjective(J,GRB.MINIMIZE)
+    model.setParam("MIPfocus",1)
     model.setParam('TimeLimit', 120)
-    model.optimize()
+    if cost==2:
+        J=QuadExpr(sum([u[t,j]*u[t,j] for j in optimize_controls_indices for t in range(T)]))
+        model.setObjective(J,GRB.MINIMIZE)
+        model.setParam('TimeLimit', time_limit)
+        model.optimize()
+    elif cost==1:
+        u_abs=model.addVars(range(T),optimize_controls_indices,obj=1)
+        model.update()
+        model.addConstrs(u[t,j]<=u_abs[t,j] for t in range(T) for j in optimize_controls_indices)
+        model.addConstrs(-u[t,j]<=u_abs[t,j] for t in range(T) for j in optimize_controls_indices)
+        model.optimize()
+    else:
+        model.optimize()
     x_n={t:np.array([x[t,i].X for i in range(system.n)]) for t in range(T+1)}
     u_n={t:np.array([u[t,i].X for i in range(system.m_u)]) for t in range(T)}
     lambda_n={t:np.array([u_lambda[t,i].X for i in range(system.m_lambda)]) for t in range(T)}

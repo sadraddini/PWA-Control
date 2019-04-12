@@ -44,7 +44,7 @@ J_1n=np.array([-sym.sin(theta),sym.cos(theta),psi_1]).reshape(3,1)
 J_1t=np.array([sym.cos(theta),sym.sin(theta),0]).reshape(3,1)
 J_1=np.hstack((J_1n,J_1t))
 C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.3,name="contact point")
-
+C1.sliding=False
 
 psi_2= (x_2-x)*sym.cos(theta) + (y_2-y)*sym.sin(theta)
 phi_2=-( (x_2-x)*sym.sin(-theta) + (y_2-y)*sym.cos(theta)  )
@@ -52,7 +52,7 @@ J_2n=np.array([-sym.sin(theta),sym.cos(theta),psi_2]).reshape(3,1)
 J_2t=np.array([sym.cos(theta),sym.sin(theta),0]).reshape(3,1)
 J_2=np.hstack((J_2n,J_2t))
 C2=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.3,name="contact point")
-
+C2.sliding=False
 
 mysystem.build_and_linearize()
 
@@ -60,9 +60,9 @@ mysystem.build_and_linearize()
 Eta=environment(0)
 Eta.dict_of_values={x:0,y:0,theta:0,x_1:1,x_2:-1,y_1:0,y_2:0,
      mysystem.v_o[0]:0,mysystem.v_o[1]:0,mysystem.v_o[2]:0,
-     mysystem.u_lambda[0]:M*g/2,mysystem.u_lambda[1]:0,mysystem.u_lambda[2]:M*g/2,mysystem.u_lambda[3]:0,
+     mysystem.u_lambda[0]:M*g/2*0,mysystem.u_lambda[1]:0,mysystem.u_lambda[2]:M*g/2*0,mysystem.u_lambda[3]:0,
      mysystem.u_m[0]:1,mysystem.u_m[1]:0,mysystem.u_m[2]:1,mysystem.u_m[3]:0,
-     mysystem.h:0.04}
+     mysystem.h:0.02}
 
 epsilon=np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,50,1000,50,1000]).reshape(18,1)
 sys=system_numeric(mysystem)
@@ -72,9 +72,9 @@ y_goal=0.5
 #x_goal=np.array([0,y_goal,0.0,1,y_goal,-1,y_goal,0,0,0]).reshape(10,1)
 x_goal=np.array([0,0,0.0,1,0,-1,0,0,0,0]).reshape(10,1)
 sys.goal=zonotope(x_goal.reshape(10,1),np.diag([0,0,0,0,0,0,0,0,0,0]))
-x0=np.array([0.0,0,0.0,1,0.00,-1,-0.0,1.2,0,1]).reshape(10,1)
-T=20
-x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3])
+x0=np.array([0.0,0,0.0,1,0.00,-1,-0.0,1.1,0.2,1]).reshape(10,1)
+T=40
+x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
 
 def env_q(x):
     return {mysystem.q[i]:x[i] for i in range(len(mysystem.q))}
@@ -129,11 +129,11 @@ def generate_figures():
         fig.set_size_inches(10, 8)
         if t!=T:
             ax.set_title(r'%d/%d Balancing the Rod'%(t,T)+'\n'+
-                         r'$\lambda^{lF}_n: %0.1f * \lambda^{rF}_n: %0.1f $'
+                         r'$\lambda^{rF}_n: %0.1f * \lambda^{lF}_n: %0.1f $'
                          %(u_lambda[t][0],u_lambda[t][2])
-                         +'\n'+r'$\lambda^{lF}_t: %0.1f * \lambda^{rF}_t: %0.1f $'
+                         +'\n'+r'$\lambda^{rF}_t: %0.1f * \lambda^{lF}_t: %0.1f $'
                          %(u_lambda[t][1],u_lambda[t][3]))
-            animate(x[t],ax,fig)
+        animate(x[t],ax,fig)
         if t==-1:
             ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
         fig.savefig('figures/bar_%d.png'%t, dpi=100)
