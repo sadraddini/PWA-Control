@@ -44,7 +44,8 @@ J_1n=np.array([-sym.sin(theta),sym.cos(theta),psi_1]).reshape(3,1)
 J_1t=np.array([sym.cos(theta),sym.sin(theta),0]).reshape(3,1)
 J_1=np.hstack((J_1n,J_1t))
 C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.3,name="contact point")
-C1.sliding=False
+#C1.sliding=False
+C1.no_contact=False
 
 psi_2= (x_2-x)*sym.cos(theta) + (y_2-y)*sym.sin(theta)
 phi_2=-( (x_2-x)*sym.sin(-theta) + (y_2-y)*sym.cos(theta)  )
@@ -52,7 +53,8 @@ J_2n=np.array([-sym.sin(theta),sym.cos(theta),psi_2]).reshape(3,1)
 J_2t=np.array([sym.cos(theta),sym.sin(theta),0]).reshape(3,1)
 J_2=np.hstack((J_2n,J_2t))
 C2=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.3,name="contact point")
-C2.sliding=False
+#C2.sliding=False
+C2.no_contact=False
 
 mysystem.build_and_linearize()
 
@@ -64,15 +66,17 @@ Eta.dict_of_values={x:0,y:0,theta:0,x_1:1,x_2:-1,y_1:0,y_2:0,
      mysystem.u_m[0]:1,mysystem.u_m[1]:0,mysystem.u_m[2]:1,mysystem.u_m[3]:0,
      mysystem.h:0.02}
 
-epsilon=np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,50,1000,50,1000]).reshape(18,1)
+epsilon_max=np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,50,1000,50,1000]).reshape(18,1)
+epsilon_min=-np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,50,1000,50,1000]).reshape(18,1)
 sys=system_numeric(mysystem)
-sys.add_environment(Eta,epsilon)
+sys.add_environment(Eta,epsilon_max,epsilon_min)
+sys.add_environment(Eta)
 
 y_goal=0.5
 #x_goal=np.array([0,y_goal,0.0,1,y_goal,-1,y_goal,0,0,0]).reshape(10,1)
 x_goal=np.array([0,0,0.0,1,0,-1,0,0,0,0]).reshape(10,1)
 sys.goal=zonotope(x_goal.reshape(10,1),np.diag([0,0,0,0,0,0,0,0,0,0]))
-x0=np.array([0.0,0,0.0,1,0.00,-1,-0.0,1.1,0.2,1]).reshape(10,1)
+x0=np.array([0.0,0,0.0,1,0,-1,-0.0,0,1,0]).reshape(10,1)
 T=40
 x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
 

@@ -172,7 +172,7 @@ class contact_point_symbolic_2D:
         E=np.hstack((E_x,E_u,E_lambda))
         return (E,e)
     
-    def Evaluate_polyhedral_matrices(self,dynamical_matrices,Eta,epsilon=[0]):
+    def Evaluate_polyhedral_matrices(self,dynamical_matrices,Eta,epsilon_max,epsilon_min):
         """
         H,h are dictionary of different volumes 2D
         """
@@ -186,7 +186,7 @@ class contact_point_symbolic_2D:
             H_n[contact_mode]=np.vstack((H_n[contact_mode],self.H_cone["forces",contact_mode]))
             h_n[contact_mode]=np.vstack((h_n[contact_mode],self.h_cone["forces",contact_mode]))
             # Box Constraints
-            if len(epsilon)!=1:
+            if len(epsilon_max)!=1:
                 H_n[contact_mode]=np.vstack((H_n[contact_mode],np.eye(N),-np.eye(N)))
-                h_n[contact_mode]=np.vstack((h_n[contact_mode],epsilon,epsilon))            
+                h_n[contact_mode]=np.vstack((h_n[contact_mode],epsilon_max,-epsilon_min))            
         return H_n,h_n

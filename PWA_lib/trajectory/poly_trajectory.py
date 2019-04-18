@@ -175,11 +175,11 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
         for tau in  system.Eta:
             for i in system.list_of_contact_points:
                 for sigma in i.Sigma:
-                    for row in range(system.E[tau][i,sigma].shape[0]):
-                        a_x=LinExpr([(system.E[tau][i,sigma][row,k],x_TISHCOM[t,tau,i,sigma,k]) for k in range(system.n)])
-                        a_u=LinExpr([(system.E[tau][i,sigma][row,k+system.n],u_TISHCOM[t,tau,i,sigma,k])  for k in range(system.m_u)])
-                        a_lambda=LinExpr([(system.E[tau][i,sigma][row,k+system.n+system.m_u],lambda_TISHCOM[t,tau,i,sigma,k]) for k in range(system.m_lambda)])
-                        model.addConstr(a_x+a_u+a_lambda <= system.e[tau][i,sigma][row,0]*delta_TISHCOM[t,tau,i,sigma])
+                    for row in range(system.E[tau][i][sigma].shape[0]):
+                        a_x=LinExpr([(system.E[tau][i][sigma][row,k],x_TISHCOM[t,tau,i,sigma,k]) for k in range(system.n)])
+                        a_u=LinExpr([(system.E[tau][i][sigma][row,k+system.n],u_TISHCOM[t,tau,i,sigma,k])  for k in range(system.m_u)])
+                        a_lambda=LinExpr([(system.E[tau][i][sigma][row,k+system.n+system.m_u],lambda_TISHCOM[t,tau,i,sigma,k]) for k in range(system.m_lambda)])
+                        model.addConstr(a_x+a_u+a_lambda <= system.e[tau][i][sigma][row,0]*delta_TISHCOM[t,tau,i,sigma])
                         
     # Equation b: Convexhull Dynamics
     model.addConstrs(x_time[t,tau,j]==x_TISHCOM.sum(t,tau,i,"*",j) for t in range(T) for tau in system.Eta \
@@ -200,7 +200,7 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
             a_c=LinExpr([(system.c[tau][row,0],delta_time[t,tau]) for tau in system.Eta])
             model.addConstr(x[t+1,row]==a_x+a_u+a_lambda+a_c)
     
-    # Equation d: Now for tau
+    # Equation d: For tau: the environments
     model.addConstrs(x[t,j]==x_time.sum(t,"*",j) for t in range(T) for j in range(system.n))
     model.addConstrs(u[t,j]==u_time.sum(t,"*",j) for t in range(T) for j in range(system.m_u))
     model.addConstrs(u_lambda[t,j]==u_lambda_time.sum(t,"*",j) for t in range(T) for j in range(system.m_lambda))
@@ -222,7 +222,7 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
     # Optimize
     model.write("point_trajectory_time_stepping.lp")
     model.setParam("MIPfocus",1)
-    model.setParam('TimeLimit', 120)
+    model.setParam('TimeLimit', 300)
     if cost==2:
         J=QuadExpr(sum([u[t,j]*u[t,j] for j in optimize_controls_indices for t in range(T)]))
         model.setObjective(J,GRB.MINIMIZE)
