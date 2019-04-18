@@ -23,16 +23,16 @@ from matplotlib.patches import Rectangle
 
 
 n=2
-q=3
+q=4
 B=Box(q)
-N=100
-X=translate(Box(2,10),np.array([10,10]).reshape(2,1))
+N=200
+X=translate(Box(2,12),np.array([10,10]).reshape(2,1))
 #list_of_zonotopes=[zonotope(np.random.random((n,1))*10+np.array([0.1*i,0.5*i]).reshape(2,1),np.random.random((n,q))*1) for i in range(N)]
-list_of_zonotopes=[zonotope(np.random.random((n,1))*20,np.random.random((n,q))*1) for i in range(N)]
+list_of_zonotopes=[zonotope(np.random.random((n,1))*20*np.array([1,2]).reshape(2,1),np.random.random((n,q))*2-1) for i in range(N)]
 
 fig, ax = plt.subplots() # note we must use plt.subplots, not plt.subplot
 visZ(ax,list_of_zonotopes)
 
 
 mytree=BSP_tree_cells(X,list_of_zonotopes)
-mytree.construct_tree(D=15,N=10)
+mytree.construct_tree(D=10  ,N=30)

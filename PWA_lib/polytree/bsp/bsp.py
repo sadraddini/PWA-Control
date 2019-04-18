@@ -176,8 +176,8 @@ class cell:
         """
         X=np.hstack([z.x for z in self.list_of_polytopes])
         u,s,v=np.linalg.svd(X)
-        c=u[random.randint(1,len(u))-1,:].reshape(len(u),1)
-        c=np.random.normal(size=(len(u),1))
+        c_u=u[random.randint(1,len(u))-1,:].reshape(len(u),1)
+        c=c_u+np.random.normal(size=(len(u),1))
         C1,C2,hyperplane=_cut_half(c,self.polytope)
         S={}
         for C in [C1,C2]:
