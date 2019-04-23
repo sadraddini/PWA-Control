@@ -51,9 +51,12 @@ class system:
             c=sum([self.c[n,i]*delta_PWA[n,i] for n in self.list_of_sum_indices for i in self.list_of_modes[n]])
             H=np.vstack([self.C[n,i].H for n in self.list_of_sum_indices for i in self.list_of_modes[n] if delta_PWA[n,i]==1])
             h=np.vstack([self.C[n,i].h for n in self.list_of_sum_indices for i in self.list_of_modes[n] if delta_PWA[n,i]==1])
-            H,h=canonical_polytope(H,h)
+#            H,h=canonical_polytope(H,h)
             cell=linear_cell(A,B,c,polytope(H,h))    
             self.cell[mode]=(cell)
+            
+    def simulate_forward():
+        pass
 
 class linear_cell:
     """

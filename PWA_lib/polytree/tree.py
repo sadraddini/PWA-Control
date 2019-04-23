@@ -14,7 +14,7 @@ from pypolycontain.lib.zonotope import zonotope,zonotope_distance_point
 from pypolycontain.utils.utils import vertices_cube as vcube 
 from pypolycontain.visualization.visualize_2D import visualize_2D_zonotopes_ax as visZ,plt
 
-from PWA_lib.trajectory.poly_trajectory import point_trajectory,polytopic_trajectory_given_modes
+from PWA_lib.trajectory.poly_trajectory import point_trajectory_sPWA,polytopic_trajectory_given_modes
 
 
 class state:
@@ -93,7 +93,7 @@ class tree():
         else:
             print "WARNING: no gaol. Goal fixed to system goal. Is this the initizaliztion?"
             list_of_goals=[self.system.goal]
-        (x_nom,u_nom,delta_PWA,mu_nom,flag)=point_trajectory(self.system,x_sample,list_of_goals,T,eps=eps_point)
+        (x_nom,u_nom,delta_PWA,mu_nom,flag)=point_trajectory_sPWA(self.system,x_sample,list_of_goals,T,eps=eps_point)
         if flag==False:
             return False
         else:
