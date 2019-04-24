@@ -98,6 +98,7 @@ epsilon_max=np.array([20,20,0.22,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70
 epsilon_min=-np.array([20,20,0.3,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
 sys.add_environment(Eta_0,epsilon_max,epsilon_min)
 
+
 # Add a numerical environment
 Eta_1=environment(1)
 Eta_1.dict_of_values={x:0,y:a,theta:0.3,x_1:-b,x_2:b,y_1:a,y_2:a,

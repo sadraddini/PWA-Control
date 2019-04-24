@@ -176,6 +176,7 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
             for i in system.list_of_contact_points:
                 for sigma in i.Sigma:
                     for row in range(system.E[tau][i][sigma].shape[0]):
+#                        print tau,i,sigma,row,[system.E[tau][i][sigma][row,k] for k in range(system.n) ]
                         a_x=LinExpr([(system.E[tau][i][sigma][row,k],x_TISHCOM[t,tau,i,sigma,k]) for k in range(system.n)])
                         a_u=LinExpr([(system.E[tau][i][sigma][row,k+system.n],u_TISHCOM[t,tau,i,sigma,k])  for k in range(system.m_u)])
                         a_lambda=LinExpr([(system.E[tau][i][sigma][row,k+system.n+system.m_u],lambda_TISHCOM[t,tau,i,sigma,k]) for k in range(system.m_lambda)])
@@ -247,8 +248,8 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
     print "*"*80
 #    for key,val in delta_TISHCOM.items():
 #        print key,val
-    return x_n,u_n,lambda_n,x_TISHCOM_n,x_t_n
-
+#    return x_n,u_n,lambda_n,x_TISHCOM_n,x_t_n
+    return x_n,u_n,lambda_n
             
     
 def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[]):

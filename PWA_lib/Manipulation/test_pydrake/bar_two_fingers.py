@@ -70,7 +70,6 @@ epsilon_max=np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,50,1000,50,1000]).reshape(18,1
 epsilon_min=-np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,50,1000,50,1000]).reshape(18,1)
 sys=system_numeric(mysystem)
 sys.add_environment(Eta,epsilon_max,epsilon_min)
-sys.add_environment(Eta)
 
 y_goal=0.5
 #x_goal=np.array([0,y_goal,0.0,1,y_goal,-1,y_goal,0,0,0]).reshape(10,1)
