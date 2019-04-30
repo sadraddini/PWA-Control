@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-Created on Thu Apr 18 16:37:42 2019
+Created on Wed Apr 24 16:56:05 2019
 
 @author: sadra
 """
@@ -73,10 +73,11 @@ phi_2=s_m-_zeta[0]
 psi_m=_zeta[1]
 psi_o=R * (theta_m-theta)
 psi_2=psi_o-psi_m
+phi_2+=ReLU(-psi_m,100) # ReLU added to punish negative -psi_m
 J_2n=np.array([-sym.sin(theta_m),sym.cos(theta_m),-(psi_m-p*sym.sin(theta_m-theta))]).reshape(3,1)
 J_2t=np.array([sym.cos(theta_m),sym.sin(theta_m),R+phi_2-p*sym.cos(theta_m-theta)]).reshape(3,1)
 J_2=np.hstack((J_2n,J_2t))
-C2=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.5,name="right finger")
+C2=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.3,name="right finger")
 #C2.sliding=False
 C2.no_contact=False
 
@@ -94,39 +95,80 @@ psi_3=_xi_2[0]
 J_3n=np.array([sym.sin(theta),-sym.cos(theta),-psi_3]).reshape(3,1)
 J_3t=np.array([-sym.cos(theta),-sym.sin(theta),phi_3+p]).reshape(3,1)
 J_3=np.hstack((J_3n,J_3t))
-C3=contact_point_symbolic_2D(mysystem,phi=phi_3,psi=psi_3,J=J_3,friction=0.5,name="left finger")
+C3=contact_point_symbolic_2D(mysystem,phi=phi_3,psi=psi_3,J=J_3,friction=0.3,name="left finger")
 #C3=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.5,name="right finger")
 C3.no_contact=False
 
 
-
 # Build the Symbolic MLD system
 mysystem.build_and_linearize()
-sys=system_numeric(mysystem)
+"""
+Now the sequences
+"""
 
-Eta_1=environment(0)
-Eta_1.dict_of_values={x:0,y:R-p,theta:0.25,x_m:0.18,y_m:0.82,theta_m:np.pi/2.0-0.2,s_m:0.8,
+N=30
+delta_theta=0.05
+
+
+x_traj={}
+u_traj={}
+lambda_traj={}
+# Zero Env
+h=0.03
+sys=system_numeric(mysystem)
+Eta_0=environment(0)
+Eta_0.dict_of_values={x:0,y:R-p,theta:delta_theta/2,x_m:0.18,y_m:0.82,theta_m:np.pi/2.0-0.4,s_m:0.8,
      mysystem.v_o[0]:0,mysystem.v_o[1]:0,mysystem.v_o[2]:0,
      mysystem.u_lambda[0]:0,mysystem.u_lambda[1]:0,mysystem.u_lambda[2]:0,mysystem.u_lambda[3]:0,
      mysystem.u_lambda[4]:0,mysystem.u_lambda[5]:0,
      mysystem.u_m[0]:0,mysystem.u_m[1]:0,mysystem.u_m[2]:0,mysystem.u_m[3]:0,
      mysystem.h:0.03}
-    
 epsilon_max=np.array([20,20,0.7,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
 epsilon_min=-np.array([20,20,0.7,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
-sys.add_environment(Eta_1,epsilon_max,epsilon_min)
+sys.add_environment(Eta_0,epsilon_max,epsilon_min)
 
-
-#raise 1
-
-up_shift=0
-right_shift=0
-theta_shift=0.25
-x_goal=np.array([0,R-p,theta_shift,0.18,0.82,np.pi/2-0.2,0.8,0,0,0]).reshape(10,1).reshape(10,1)
-x0=np.array([0,R-p,0,0.18,0.82,np.pi/2-0.3,0.8,0,0,0]).reshape(10,1).reshape(10,1)
+theta_shift=delta_theta
+x_goal=np.array([0,R-p,theta_shift,0.12,0.82,np.pi/2-0.4,0.8,0,0,0]).reshape(10,1)
+x0=np.array([0,R-p,0,0.18,0.82,np.pi/2-0.4,0.8,0,0,0]).reshape(10,1).reshape(10,1)
 sys.goal=zonotope(x_goal.reshape(10,1),100*np.diag([1,1,0,1,1,1,1,0,0,0]))
-T=10
-x_traj,u_traj,u_lambda=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+T=5
+x_traj[0],u_traj[0],lambda_traj[0]=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+
+
+for k in range(N):
+    sys=system_numeric(mysystem)
+    Eta_1=environment(0)
+    Eta_1.dict_of_values={x:x_traj[k][T][0],y:x_traj[k][T][1],theta:x_traj[k][T][2]+delta_theta/2,
+                          x_m:x_traj[k][T][3],y_m:x_traj[k][T][4],theta_m:x_traj[k][T][5],s_m:x_traj[k][T][5],
+         mysystem.v_o[0]:x_traj[k][T][6],mysystem.v_o[1]:x_traj[k][T][8],mysystem.v_o[2]:x_traj[k][T][9],
+#         mysystem.u_lambda[0]:lambda_traj[k][T-1][0],mysystem.u_lambda[1]:lambda_traj[k][T-1][1],
+#         mysystem.u_lambda[2]:lambda_traj[k][T-1][2],mysystem.u_lambda[3]:lambda_traj[k][T-1][3],
+#         mysystem.u_lambda[4]:lambda_traj[k][T-1][4],mysystem.u_lambda[5]:lambda_traj[k][T-1][5],
+         mysystem.u_lambda[0]:0,mysystem.u_lambda[1]:0,
+         mysystem.u_lambda[2]:0,mysystem.u_lambda[3]:0,
+         mysystem.u_lambda[4]:0,mysystem.u_lambda[5]:0,
+#         mysystem.u_m[0]:u_traj[k][T-1][0],mysystem.u_m[1]:u_traj[k][T-1][1],
+#         mysystem.u_m[2]:u_traj[k][T-1][2],mysystem.u_m[3]:u_traj[k][T-1][3],
+         mysystem.u_m[0]:0,mysystem.u_m[1]:0,
+         mysystem.u_m[2]:0,mysystem.u_m[3]:0,
+         mysystem.h:h}
+    epsilon_max=np.array([20,20,3.7,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
+    epsilon_min=-np.array([20,20,0.7,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
+    sys.add_environment(Eta_1,epsilon_max,epsilon_min)
+    
+    theta_shift=delta_theta*(k+2)
+    x_goal=np.array([0,R-p,theta_shift,0.18,0.82,np.pi/2-0.3,0.8,0,0,0]).reshape(10,1)
+    x0=x_traj[k][T].reshape(mysystem.n,1)
+    sys.goal=zonotope(x_goal.reshape(10,1),100*np.diag([1,1,0,1,1,1,1,0,0,0]))
+    T=5
+    x_traj[k+1],u_traj[k+1],lambda_traj[k+1]=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+
+
+
+x_traj=merge_timed_vectors_glue([x_traj[k] for k in range(k+1)])
+u_lambda=merge_timed_vectors_skip([lambda_traj[k] for k in range(k+1)])
+T=max(x_traj.keys())
+
 
 
 """
@@ -188,26 +230,40 @@ def generate_figures():
             ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
         fig.savefig('figures/carrot_%d.png'%t, dpi=100)
 
+def single_figure(X):
+    fig,ax = plt.subplots()
+    fig.set_size_inches(10, 10)
+    """
+    Numericals
+    """
+    config={x:X[0],y:X[1],theta:X[2],x_m:X[3],y_m:X[4],theta_m:X[5],s_m:X[6]}
+    
+    phi_1_n=phi_1.Evaluate(config)
+    phi_2_n=phi_2.Evaluate(config)
+    phi_3_n=phi_3.Evaluate(config)
+
+    psi_1_n=psi_1.Evaluate(config)
+    psi_2_n=psi_2.Evaluate(config)
+    psi_3_n=psi_3.Evaluate(config)
+    psi_m_n=psi_m.Evaluate(config)
+    
+    print "phi_1:",phi_1_n
+    print "phi_2:",phi_2_n
+    print "phi_3:",phi_3_n
+    
+    print "psi_1:",psi_1_n
+    print "psi_2:",psi_2_n
+    print "psi_3:",psi_3_n
+    print "psi_m(3):",psi_m_n
+ 
+#    x_R_n=x_R.Evaluate(config)
+#    y_R_n=y_R.Evaluate(config)
+#    
+#    x_c_n=x_c.Evaluate(config)
+#    y_c_n=y_c.Evaluate(config)
+    
+    animate(X,ax,fig)
+    
 generate_figures()
     
-"""
-Numericals
-"""
-#config={x:0,y:R-p,theta:0,x_m:0.18,y_m:0.82,theta_m:np.pi/2-0.3,s_m:0.8}
-#X=np.array([x,y,theta,x_m,y_m,theta_m,s_m])
-#X_n=sym.Evaluate(X,config)
-#
-#phi_1_n=phi_1.Evaluate(config)
-#phi_2_n=phi_2.Evaluate(config)
-#phi_3_n=phi_3.Evaluate(config)
-#
-#x_R_n=x_R.Evaluate(config)
-#y_R_n=y_R.Evaluate(config)
-#
-#x_c_n=x_c.Evaluate(config)
-#y_c_n=y_c.Evaluate(config)
-#
-#psi_1_n=psi_1.Evaluate(config)
-#psi_2_n=psi_2.Evaluate(config)
-#psi_3_n=psi_3.Evaluate(config)
-#psi_m_n=psi_m.Evaluate(config)    
+    

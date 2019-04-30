@@ -11,9 +11,10 @@ from gurobipy import Model,GRB,LinExpr,QuadExpr,tuplelist
 
 import time as time
 
-from pypolycontain.lib.containment_encodings import subset_LP,subset_zonotopes
+from pypolycontain.lib.containment_encodings import subset_LP,subset_zonotopes,subset_generic
 from pypolycontain.lib.polytope import polytope
 from pypolycontain.lib.zonotope import zonotope
+from pypolycontain.lib.AH_polytope import cartesian_product
 
 
 def point_trajectory_sPWA(system,x0,list_of_goals,T,eps=0,optimize_controls_indices=[]):
@@ -164,7 +165,7 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
                          for sigma in i.Sigma],vtype=GRB.BINARY,name="delta_TISHCOM")
     model.update()
     # Initial Condition    
-    print "inside function epsilon is",eps,"initial",x0.T
+    print "epsilon is",eps,"initial condition:",x0.T
     for j in range(system.n):
 ##        model.addConstr(x[0,j]<=x0[j,0]+eps*system.scale[j])
 ##        model.addConstr(x[0,j]>=x0[j,0]-eps*system.scale[j])
@@ -223,7 +224,7 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
     # Optimize
     model.write("point_trajectory_time_stepping.lp")
     model.setParam("MIPfocus",1)
-    model.setParam('TimeLimit', 300)
+    model.setParam('TimeLimit', 6)
     if cost==2:
         J=QuadExpr(sum([u[t,j]*u[t,j] for j in optimize_controls_indices for t in range(T)]))
         model.setObjective(J,GRB.MINIMIZE)
@@ -318,6 +319,86 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[
     return (x_num,u_num,G_num,theta_num)
 
 
+def disturbed_polytopic_trajectory_given_regions(x0,list_of_cells,goal,eps=0,order=1,scale=[]):
+    """
+    Description: 
+        Polytopic Trajectory Optimization with the ordered list of polytopes given
+        This is a convex program as mode sequence is already given
+        list_of_cells: each cell has the following attributes: A,B,c,W and an AH-polytope
+    """
+    if len(scale)==0:
+        scale=np.ones(x0.shape[0])
+    model=Model("Fixed Mode Polytopic Trajectory")
+    T=len(list_of_cells)
+    n,m=list_of_cells[0].B.shape
+    q=int(order*n)
+    n_w=list_of_cells[0].w.G.shape[1]
+    list_of_q=list(q+np.array(range(T))*n_w)
+    print list_of_q
+    x=model.addVars(range(T+1),range(n),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x")
+    u=model.addVars(range(T),range(m),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u")
+    G,theta={},{}
+    for t in range(T):
+        _q=list_of_q[t]
+        G[t]=model.addVars(range(n),range(_q),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="G_%d"%t)
+        theta[t]=model.addVars(range(T),range(_q),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="theta_%s"%t)
+    _q=list_of_q[T-1]+n_w
+    G[T]=model.addVars(range(n),range(_q),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="G_%d"%T)
+    model.update()
+    print "inside function epsilon is",eps
+    for j in range(n):
+        model.addConstr(x[0,j]<=x0[j,0]+eps*scale[j])
+        model.addConstr(x[0,j]>=x0[j,0]-eps*scale[j])
+
+    for t in range(T):
+        print "adding constraints of t",t
+        cell=list_of_cells[t]
+        A,B,w,p_x,p_u=cell.A,cell.B,cell.w,cell.p_x,cell.p_u
+        _q=list_of_q[t]
+        for j in range(n):
+            expr_x=LinExpr([(A[j,k],x[t,k]) for k in range(n)])
+            expr_u=LinExpr([(B[j,k],u[t,k]) for k in range(m)])
+            model.addConstr(x[t+1,j]==expr_x+expr_u+w.x[j,0])
+        for i in range(n):
+            for j in range(_q):
+                expr_x=LinExpr([(A[i,k],G[t][k,j]) for k in range(n)])
+                expr_u=LinExpr([(B[i,k],theta[t][k,j]) for k in range(m)])
+                model.addConstr(G[t+1][i,j]==expr_x+expr_u)
+            for j in range(_q,_q+n_w):
+                model.addConstr(G[t+1][i,j]==w.G[i,j-_q])
+        x_t=np.array([x[t,j] for j in range(n)]).reshape(n,1)
+        u_t=np.array([u[t,j] for j in range(m)]).reshape(m,1)
+        G_t=np.array([G[t][i,j] for i in range(n) for j in range(_q)]).reshape(n,_q)
+        theta_t=np.array([theta[t][i,j] for i in range(m) for j in range(_q)]).reshape(m,_q)
+        X_t=zonotope(x_t,G_t)
+        U_t=zonotope(u_t,theta_t)
+        subset_generic(model,X_t,p_x)
+        subset_generic(model,U_t,p_u)
+
+    _q=list_of_q[T-1]+n_w
+    x_T=np.array([x[T,j] for j in range(n)]).reshape(n,1)
+    G_T=np.array([G[T][i,j] for i in range(n) for j in range(_q)]).reshape(n,_q)
+    z=zonotope(x_T,G_T)
+    subset_zonotopes(model,z,goal)
+    # Cost function
+    J=LinExpr([(1.0/scale[i],G[t][i,i]) for t in range(T+1) for i in range(n)])
+    model.setObjective(J)
+    model.write("polytopic_trajectory.lp")
+    model.setParam('TimeLimit', 150)
+    model.optimize()
+    x_num,G_num,theta_num,u_num={},{},{},{}
+    for t in range(T):
+        x_num[t]=np.array([[x[t,j].X] for j in range(n)]).reshape(n,1)
+        _q=list_of_q[t]
+        G_num[t]=np.array([[G[t][i,j].X] for i in range(n) for j in range(_q)]).reshape(n,_q)
+    _q=list_of_q[t]+n_w
+    x_num[T]=np.array([[x[T,j].X] for j in range(n)]).reshape(n,1)
+    G_num[T]=np.array([[G[T][i,j].X] for i in range(n) for j in range(_q)]).reshape(n,_q)
+    for t in range(T):
+        _q=list_of_q[t]
+        theta_num[t]=np.array([[theta[t][i,j].X] for i in range(m) for j in range(_q)]).reshape(m,_q)
+        u_num[t]=np.array([[u[t,i].X] for i in range(m) ]).reshape(m,1)
+    return (x_num,u_num,G_num,theta_num)
 
 
 

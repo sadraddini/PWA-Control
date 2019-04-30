@@ -67,3 +67,14 @@ class linear_cell:
         self.B=B
         self.c=c
         self.p=p
+        
+class disturbed_linear_cell:
+    """
+    This is a linear cell
+    """
+    def __init__(self,A,B,w,p_x,p_u):
+        self.A=A
+        self.B=B
+        self.w=w # Must be a Zonotope
+        self.p_x=p_x # A polytope
+        self.p_u=p_u # A polytope
