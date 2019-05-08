@@ -65,6 +65,7 @@ J_1=np.hstack((J_1n,J_1t))
 C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.8,name="ground contact")
 C1.sliding=False
 
+
 """
 Finger Right: surface contact with curvy side
 """
@@ -123,16 +124,16 @@ Eta_0.dict_of_values={x:0,y:R-p,theta:delta_theta/2,x_m:0.18,y_m:0.82,theta_m:np
      mysystem.u_lambda[4]:0,mysystem.u_lambda[5]:0,
      mysystem.u_m[0]:0,mysystem.u_m[1]:0,mysystem.u_m[2]:0,mysystem.u_m[3]:0,
      mysystem.h:0.03}
-epsilon_max=np.array([20,20,0.7,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
-epsilon_min=-np.array([20,20,0.7,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
+epsilon_max=np.array([20,20,0.7,10,10,10,10,50,50,50,2,2,2,2,500,500,500,500,70,70]).reshape(20,1)
+epsilon_min=-np.array([20,20,0.7,10,10,10,10,50,50,50,2,2,2,2,500,500,500,500,70,70]).reshape(20,1)
 sys.add_environment(Eta_0,epsilon_max,epsilon_min)
 
 theta_shift=delta_theta
-x_goal=np.array([0,R-p,theta_shift,0.12,0.82,np.pi/2-0.4,0.8,0,0,0]).reshape(10,1)
+x_goal=np.array([0,2,theta_shift,0.12,0.82,np.pi/2-0.4,0.8,0,0,0]).reshape(10,1)
 x0=np.array([0,R-p,0,0.18,0.82,np.pi/2-0.4,0.8,0,0,0]).reshape(10,1).reshape(10,1)
 sys.goal=zonotope(x_goal.reshape(10,1),100*np.diag([1,1,0,1,1,1,1,0,0,0]))
 T=5
-x_traj[0],u_traj[0],lambda_traj[0]=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+x_traj[0],u_traj[0],lambda_traj[0],mode=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
 
 
 for k in range(N):
@@ -157,11 +158,11 @@ for k in range(N):
     sys.add_environment(Eta_1,epsilon_max,epsilon_min)
     
     theta_shift=delta_theta*(k+2)
-    x_goal=np.array([0,R-p,theta_shift,0.18,0.82,np.pi/2-0.3,0.8,0,0,0]).reshape(10,1)
+    x_goal=np.array([0,2,theta_shift,0.18,0.82,np.pi/2-0.3,0.8,0,0,0]).reshape(10,1)
     x0=x_traj[k][T].reshape(mysystem.n,1)
-    sys.goal=zonotope(x_goal.reshape(10,1),100*np.diag([1,1,0,1,1,1,1,0,0,0]))
+    sys.goal=zonotope(x_goal.reshape(10,1),10*np.diag([1,1,0,1,1,1,1,0,0,0]))
     T=5
-    x_traj[k+1],u_traj[k+1],lambda_traj[k+1]=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+    x_traj[k+1],u_traj[k+1],lambda_traj[k+1],mode=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
 
 
 
@@ -178,7 +179,7 @@ import matplotlib.patches as patches
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 
-def carrot_vertices(x,y,theta,N=50):
+def carrot_vertices(x,y,theta,N=20):
     x_c,y_c=x-p*np.sin(theta),y+p*np.cos(theta)
     v=np.empty((N,2))
     for k in range(N):

@@ -241,16 +241,17 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
     x_n={t:np.array([x[t,i].X for i in range(system.n)]) for t in range(T+1)}
     u_n={t:np.array([u[t,i].X for i in range(system.m_u)]) for t in range(T)}
     lambda_n={t:np.array([u_lambda[t,i].X for i in range(system.m_lambda)]) for t in range(T)}
-#    delta_n={t:np.array([x[t,i].X for i in range(system.n)]) for t in range(T)}
-    x_t_n={(t,tau):np.array([x_time[t,tau,i].X for i in range(system.n)]) for t in range(T) for tau in system.Eta}
-    x_TISHCOM_n={(t,tau,i,sigma):np.array([x_TISHCOM[t,tau,i,sigma,k].X for k in range(system.n)]) for t in range(T) for tau in system.Eta\
-                for i in system.list_of_contact_points for sigma in i.Sigma}
-#    print x_TISHCOM_n
+    mode_n={}
+    for t in range(T):
+        mode_n[t]=[None]*len(system.list_of_contact_points)
+        for tau in system.Eta:
+            for i in system.list_of_contact_points:
+                for sigma in i.Sigma:
+                    if np.linalg.norm(delta_TISHCOM[t,tau,i,sigma].X-1)<=10**-1:
+                        mode_n[t][i.index]=sigma
+        mode_n[t]=tuple(mode_n[t])
     print "*"*80
-#    for key,val in delta_TISHCOM.items():
-#        print key,val
-#    return x_n,u_n,lambda_n,x_TISHCOM_n,x_t_n
-    return x_n,u_n,lambda_n
+    return x_n,u_n,lambda_n,mode_n
             
     
 def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[]):

@@ -94,7 +94,8 @@ class contact_point_symbolic_2D:
             H["sliding_negative"],h["sliding_negative"]=self._contact_geometry_sliding_negative()
         self.H=H
         self.h=h
-    
+        self.Sigma=self.H.keys()
+
 
     """
     Contact Forces: These are just numbers for 2D
@@ -177,7 +178,6 @@ class contact_point_symbolic_2D:
         H,h are dictionary of different volumes 2D
         """
         H_n,h_n={},{}
-        self.Sigma=self.H.keys()
         N=self.sys.x.shape[0]+self.sys.u.shape[0]+self.sys.u_lambda.shape[0]
         for contact_mode in self.Sigma:
             H=sym.Evaluate(self.H[contact_mode],Eta)
@@ -188,5 +188,5 @@ class contact_point_symbolic_2D:
             # Box Constraints
             if len(epsilon_max)!=1:
                 H_n[contact_mode]=np.vstack((H_n[contact_mode],np.eye(N),-np.eye(N)))
-                h_n[contact_mode]=np.vstack((h_n[contact_mode],epsilon_max,-epsilon_min))            
+                h_n[contact_mode]=np.vstack((h_n[contact_mode],epsilon_max,-epsilon_min))  
         return H_n,h_n

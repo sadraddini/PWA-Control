@@ -68,6 +68,9 @@ class linear_cell:
         self.c=c
         self.p=p
         
+    def __repr__(self):
+        return "Linear cells with %d states and %d controls"%(self.B.shape[0],self.B.shape[1])
+        
 class disturbed_linear_cell:
     """
     This is a linear cell

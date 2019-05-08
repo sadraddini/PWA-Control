@@ -17,8 +17,8 @@ from pypolycontain.lib.zonotope import zonotope
 from PWA_lib.Manipulation.contact_point_pydrake import contact_point_symbolic_2D
 from PWA_lib.Manipulation.system_symbolic_pydrake import system_symbolic
 from PWA_lib.Manipulation.system_numeric import system_hard_contact_PWA_numeric as system_numeric
-from PWA_lib.Manipulation.system_numeric import environment,merge_timed_vectors_glue,merge_timed_vectors_skip
-from PWA_lib.trajectory.poly_trajectory import point_trajectory_tishcom
+from PWA_lib.Manipulation.system_numeric import environment,merge_timed_vectors_glue,merge_timed_vectors_skip,trajectory_to_list_of_linear_cells
+from PWA_lib.trajectory.poly_trajectory import point_trajectory_tishcom,polytopic_trajectory_given_modes
 
 
 mysystem=system_symbolic("Carrot", 2)
@@ -62,8 +62,8 @@ psi_1= - R * theta - x_c
 J_1n=np.array([0,1,-p*sym.sin(theta)]).reshape(3,1)
 J_1t=np.array([1,0,R-p*sym.cos(theta)]).reshape(3,1)
 J_1=np.hstack((J_1n,J_1t))
-C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.8,name="ground contact")
-C1.sliding=False
+C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.15,name="ground contact")
+C1.sliding=True
 
 """
 Finger Right: surface contact with curvy side
@@ -98,8 +98,6 @@ C3=contact_point_symbolic_2D(mysystem,phi=phi_3,psi=psi_3,J=J_3,friction=0.5,nam
 #C3=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.5,name="right finger")
 C3.no_contact=False
 
-
-
 # Build the Symbolic MLD system
 mysystem.build_and_linearize()
 sys=system_numeric(mysystem)
@@ -110,11 +108,12 @@ Eta_1.dict_of_values={x:0,y:R-p,theta:0.25,x_m:0.18,y_m:0.82,theta_m:np.pi/2.0-0
      mysystem.u_lambda[0]:0,mysystem.u_lambda[1]:0,mysystem.u_lambda[2]:0,mysystem.u_lambda[3]:0,
      mysystem.u_lambda[4]:0,mysystem.u_lambda[5]:0,
      mysystem.u_m[0]:0,mysystem.u_m[1]:0,mysystem.u_m[2]:0,mysystem.u_m[3]:0,
-     mysystem.h:0.03}
+     mysystem.h:0.06}
     
-epsilon_max=np.array([20,20,0.7,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
-epsilon_min=-np.array([20,20,0.7,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,70,70,70,70]).reshape(22,1)
+epsilon_max=np.array([2,2,1,10,10,10,10,50,50,50,3,3,3,3,500,500,500,500,500,500]).reshape(20,1)
+epsilon_min=-np.array([2,2,0,10,10,10,10,50,50,50,3,3,3,3,500,500,500,500,500,500]).reshape(20,1)
 sys.add_environment(Eta_1,epsilon_max,epsilon_min)
+#sys.add_environment(Eta_1)
 
 
 #raise 1
@@ -126,8 +125,10 @@ x_goal=np.array([0,R-p,theta_shift,0.18,0.82,np.pi/2-0.2,0.8,0,0,0]).reshape(10,
 x0=np.array([0,R-p,0,0.18,0.82,np.pi/2-0.3,0.8,0,0,0]).reshape(10,1).reshape(10,1)
 sys.goal=zonotope(x_goal.reshape(10,1),100*np.diag([1,1,0,1,1,1,1,0,0,0]))
 T=10
-x_traj,u_traj,u_lambda=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+x_traj,u_traj,u_lambda,mode=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
 
+list_of_linear_cells=trajectory_to_list_of_linear_cells(sys,Eta_1,x_traj,u_traj,u_lambda,mode)
+x,u,G,theta=polytopic_trajectory_given_modes(x0,list_of_linear_cells,sys.goal,eps=0,order=1,scale=[])
 
 """
 Visualization
@@ -188,7 +189,7 @@ def generate_figures():
             ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
         fig.savefig('figures/carrot_%d.png'%t, dpi=100)
 
-generate_figures()
+#generate_figures()
     
 """
 Numericals
