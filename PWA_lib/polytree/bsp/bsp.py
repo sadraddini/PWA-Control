@@ -65,6 +65,22 @@ class cell:
             S[C]=cell(C,list_of_polytopes,depth=self.depth+1,parent=self)
         self.child_left,self.child_right=S[P1],S[P2]
         return S[P1],S[P2],(c,g)
+    
+    def shorten_list_by_J(self,tol=10**-4):
+        list_of_inside_polytopes=[]
+        for P in self.list_of_polytopes:
+            if Hausdorff_directed(self.polytope,P)<=tol:
+                list_of_inside_polytopes.append(P)
+        if len(list_of_inside_polytopes)<=1:
+            return # List is empty or singular. Just return
+        J_min=10*5
+        P_best=None
+        for P in list_of_inside_polytopes:
+            if J_min>P.J:
+                J_min=P.J
+                P_best=P
+        new_list=[P_best]+[P for P in self.list_of_polytopes if P not in list_of_inside_polytopes]
+        self.list_of_polytopes=new_list
         
 
 class BSP_tree_cells:
@@ -89,6 +105,10 @@ class BSP_tree_cells:
                 continue
             else:
                 cell_positive,cell_negative,hyperplane=leaf.cut_half()
+                # Shorten Lists
+                cell_positive.shorten_list_by_J()
+                cell_negative.shorten_list_by_J()
+                # End of Shortening Lists
                 new_leafs.extend([cell_positive,cell_negative])
                 self.cells.extend([cell_positive,cell_negative])
                 self.hyperplanes.append(hyperplane)
@@ -133,12 +153,14 @@ class BSP_tree_cells:
         vis(ax,[leaf.polytope])
         visZ(ax,self.list_of_polytopes,title="BSP_tree for %s"%leaf.__repr__()) 
         
-    def draw_cells(self):
+    def draw_cells(self,alpha=0.6):
         """
         Assumption: all AH-polytopes are zonotopes, and the problem is in 2D
         """
         fig, ax = plt.subplots() # note we must use plt.subplots, not plt.subplot
-        vis(ax,[cell.polytope for cell in self.cells])
+        fig.set_size_inches(10, 10)
+        fig.gca().set_aspect('equal')
+        vis(ax,[cell.polytope for cell in self.cells],alpha=alpha)
         
         
     def insert_polytope(self):
