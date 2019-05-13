@@ -19,9 +19,13 @@ class linear_cell:
         self.B=B
         self.c=c
         self.p=p
+        self.name=None
         
     def __repr__(self):
-        return "A linear cell with %d states and %d controls"%(self.B.shape[0],self.B.shape[1])
+        if self.name==None:
+            return "A linear cell with %d states and %d controls"%(self.B.shape[0],self.B.shape[1])
+        else:
+            return "The linear cell of %s"%str(self.name)
         
 class disturbed_linear_cell:
     """

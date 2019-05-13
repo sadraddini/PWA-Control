@@ -136,17 +136,6 @@ class system_symbolic:
             C._contact_geometery_all()
             C._contact_forces_all()
         self._build_dimensions()
-    
-    
-
-
-
-    
-#def _evaluate_polyhedral_matrices(H,h,Eta):
-#    H_n=sym.Evaluate(H,Eta)
-#    h_n=sym.Evaluate(h,Eta)
-#    print H_n,h_n
-#    return H_n,h_n
 
             
 class dynamics:

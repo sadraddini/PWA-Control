@@ -17,7 +17,9 @@ from pypolycontain.lib.zonotope import zonotope
 from PWA_lib.Manipulation.contact_point_pydrake import contact_point_symbolic_2D
 from PWA_lib.Manipulation.system_symbolic_pydrake import system_symbolic
 from PWA_lib.Manipulation.system_numeric import system_hard_contact_PWA_numeric as system_numeric
-from PWA_lib.Manipulation.system_numeric import environment,merge_timed_vectors_glue,merge_timed_vectors_skip,trajectory_to_list_of_linear_cells
+from PWA_lib.Manipulation.system_numeric import environment,merge_timed_vectors_glue,merge_timed_vectors_skip,\
+    trajectory_to_list_of_linear_cells,trajectory_to_list_of_linear_cells_full_linearization,\
+    PWA_cells_from_state,hybrid_reachable_sets_from_state
 from PWA_lib.trajectory.poly_trajectory import point_trajectory_tishcom,polytopic_trajectory_given_modes
 
 
@@ -62,8 +64,8 @@ psi_1= - R * theta - x_c
 J_1n=np.array([0,1,-p*sym.sin(theta)]).reshape(3,1)
 J_1t=np.array([1,0,R-p*sym.cos(theta)]).reshape(3,1)
 J_1=np.hstack((J_1n,J_1t))
-C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.15,name="ground contact")
-C1.sliding=True
+C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.75,name="ground contact")
+C1.sliding=False
 
 """
 Finger Right: surface contact with curvy side
@@ -128,6 +130,10 @@ T=10
 x_traj,u_traj,u_lambda,mode=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
 
 list_of_linear_cells=trajectory_to_list_of_linear_cells(sys,Eta_1,x_traj,u_traj,u_lambda,mode)
+list_of_linear_cells_full=trajectory_to_list_of_linear_cells_full_linearization(mysystem,x_traj,u_traj,u_lambda,mode,0.06,epsilon_min,epsilon_max)
+list_of_linear_cells_PWA=PWA_cells_from_state(mysystem,x_traj[2],0.06,epsilon_min,epsilon_max)
+list_of_PWA_sets=hybrid_reachable_sets_from_state(mysystem,x_traj[2],0.06,epsilon_min,epsilon_max)
+raise 1
 x,u,G,theta=polytopic_trajectory_given_modes(x0,list_of_linear_cells,sys.goal,eps=0,order=1,scale=[])
 
 """
@@ -172,24 +178,24 @@ def animate(X,ax,fig):
     ax.add_collection(PatchCollection([patches.Polygon(RF.T, True)],color=(0.2,0.2,0.2),alpha=0.91,edgecolor=(0,0,0)))
     ax.add_collection(PatchCollection([patches.Polygon(LF.T, True)],color=(0.2,0.2,0.2),alpha=0.91,edgecolor=(0,0,0)))
         
-def generate_figures():    
+def generate_figures(trajectory_of_x,trajectory_of_lambda):    
     for t in range(T+1):
         fig,ax = plt.subplots()
         fig.set_size_inches(10, 10)
         if t!=T:
             ax.set_title(r'%d/%d %s'%(t,T,mysystem.name)+'\n'+
                          r'$\lambda^{ground}_n: %0.1f * \lambda^{ground}_t: %0.1f $'
-                         %(u_lambda[t][0],u_lambda[t][1])
+                         %(trajectory_of_lambda[t][0],trajectory_of_lambda[t][1])
                          +'\n'+r'$\lambda^{rF}_n: %0.1f * \lambda^{rF}_t: %0.1f $'
-                         %(u_lambda[t][2],u_lambda[t][3])
+                         %(trajectory_of_lambda[t][2],trajectory_of_lambda[t][3])
                          +'\n'+r'$\lambda^{lF}_n: %0.1f * \lambda^{lF}_t: %0.1f $'
-                         %(u_lambda[t][4],u_lambda[t][5]))
-        animate(x_traj[t],ax,fig)
+                         %(trajectory_of_lambda[t][4],trajectory_of_lambda[t][5]))
+        animate(trajectory_of_x[t],ax,fig)
         if t==-1:
             ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
         fig.savefig('figures/carrot_%d.png'%t, dpi=100)
 
-#generate_figures()
+generate_figures(x_traj,u_lambda)
     
 """
 Numericals

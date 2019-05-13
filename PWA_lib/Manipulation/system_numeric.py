@@ -12,6 +12,7 @@ from gurobipy import Model,GRB,LinExpr,QuadExpr,tuplelist
 from itertools import product as pr
 
 from pypolycontain.lib.polytope import polytope
+from pypolycontain.lib.AH_polytope import AH_polytope,is_nonempty
 from PWA_lib.system.linear_cells import linear_cell as LC
 
 class system_hard_contact_PWA_numeric:
@@ -28,8 +29,7 @@ class system_hard_contact_PWA_numeric:
         self.symbolic_system=symbolic_system
         self.list_of_contact_points=symbolic_system.list_of_contact_points
         self.n,self.m_u,self.m_lambda=symbolic_system.n,symbolic_system.m_u,symbolic_system.m_lambda
-        
-        self.Sigma=list(pr(*[i.Sigma for i in self.list_of_contact_points]))
+        self.Sigma=list(pr(*[i. Sigma for i in self.list_of_contact_points]))
 
 
        
@@ -118,4 +118,73 @@ def trajectory_to_list_of_linear_cells(sys,Eta,x_traj,u_traj,lambda_traj,mode_tr
         v=np.hstack((x_traj[t],u_traj[t],lambda_traj[t])).reshape(p.n,1)
         if p.if_inside(v,tol=10**-5)==False:
             raise ValueError("Nominal Trajectory not inside polytope! Maybe an issue of numerical tolerance")
+    return list_of_cells 
+
+def environment_from_state(symbolic_sys,x,h):
+    """
+    Takes a symbolic system, state, control, contact forces and time-step, build an environment
+    """
+    Eta_0=environment(0)
+    Eta_0.dict_of_values={}
+    for i in range(symbolic_sys.n):
+        Eta_0.dict_of_values[symbolic_sys.x[i]]=x[i]
+    for u in symbolic_sys.u:
+        Eta_0.dict_of_values[u]=0
+    for u_lambda in symbolic_sys.u_lambda:
+        Eta_0.dict_of_values[u_lambda]=0
+    Eta_0.dict_of_values[symbolic_sys.h]=h
+    return Eta_0
+
+def PWA_cells_from_state(symbolic_sys,x,h,epsilon_min,epsilon_max):
+    sys=system_hard_contact_PWA_numeric(symbolic_sys)
+    Eta_now=environment_from_state(symbolic_sys,x,h)
+    sys.add_environment(Eta_now,epsilon_max,epsilon_min)
+    E,e=enumerate_modes_E(sys,Eta_now)
+    list_of_linear_cells=[]
+    for mode in sys.Sigma:
+        p=polytope(E[mode],e[mode])
+        if is_nonempty(p):
+            new_cell=LC(sys.A[Eta_now],np.hstack((sys.B_u[Eta_now],sys.B_lambda[Eta_now])),sys.c[Eta_now],p)
+            new_cell.name=mode
+            list_of_linear_cells.append(new_cell)
+    return list_of_linear_cells
+
+def hybrid_reachable_sets_from_state(symbolic_sys,x,h,epsilon_min,epsilon_max):
+    sys=system_hard_contact_PWA_numeric(symbolic_sys)
+    Eta_now=environment_from_state(symbolic_sys,x,h)
+    sys.add_environment(Eta_now,epsilon_max,epsilon_min)
+    E,e=enumerate_modes_E(sys,Eta_now)
+    list_of_sets=[]
+    for mode in sys.Sigma:
+        H=E[mode][:,symbolic_sys.n:]
+        q=H.shape[0]
+        h=e[mode].reshape(q,1)-np.dot(E[mode][:,:symbolic_sys.n],x.reshape(symbolic_sys.n,1))
+        p=polytope(H,h)
+        if is_nonempty(p):
+            B=np.hstack((sys.B_u[Eta_now],sys.B_lambda[Eta_now]))
+            t=np.dot(sys.A[Eta_now],x)+sys.c[Eta_now]
+            new_set=AH_polytope(T=B,t=t,P=p)
+            new_set.name=mode
+            list_of_sets.append(new_set)
+    return list_of_sets
+
+def trajectory_to_list_of_linear_cells_full_linearization(symbolic_sys,x_traj,u_traj,lambda_traj,mode_traj,h,epsilon_min,epsilon_max):
+    """
+    Linearize all points
+    """
+    list_of_cells=[]
+    T=max(mode_traj.keys())+1
+    for t in range(T):
+        sys=system_hard_contact_PWA_numeric(symbolic_sys)
+        Eta_now=environment_from_state(symbolic_sys,x_traj[t],h)
+        sys.add_environment(Eta_now,epsilon_max,epsilon_min)
+        E,e=enumerate_modes_E(sys,Eta_now)
+        p=polytope(E[mode_traj[t]],e[mode_traj[t]])
+        new_cell=LC(sys.A[Eta_now],np.hstack((sys.B_u[Eta_now],sys.B_lambda[Eta_now])),sys.c[Eta_now],p)
+        list_of_cells.append(new_cell)
+        # Verify correctness:
+        v=np.hstack((x_traj[t],u_traj[t],lambda_traj[t])).reshape(p.n,1)
+#        print p.h-np.dot(p.H,v)
+#        if p.if_inside(v,tol=10**-1)==False:
+#            raise ValueError("Nominal Trajectory not inside polytope! Maybe an issue of numerical tolerance")
     return list_of_cells
