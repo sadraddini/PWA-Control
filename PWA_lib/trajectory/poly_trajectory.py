@@ -167,9 +167,9 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
     # Initial Condition    
     print "epsilon is",eps,"initial condition:",x0.T
     for j in range(system.n):
-##        model.addConstr(x[0,j]<=x0[j,0]+eps*system.scale[j])
-##        model.addConstr(x[0,j]>=x0[j,0]-eps*system.scale[j])
-         model.addConstr(x[0,j]==x0[j,0])
+        model.addConstr(x[0,j]<=x0[j,0]+eps*system.scale[j])
+        model.addConstr(x[0,j]>=x0[j,0]-eps*system.scale[j])
+#         model.addConstr(x[0,j]==x0[j,0])
  
     # Equation a: Mode Constaints
     for t in range(T):
@@ -253,6 +253,126 @@ def point_trajectory_tishcom(system,x0,list_of_goals,T,eps=0,optimize_controls_i
     print "*"*80
     return x_n,u_n,lambda_n,mode_n
             
+
+def point_trajectory_tishcom_time_varying(system,list_of_environemnts,x0,list_of_goals,T,eps=0,optimize_controls_indices=[],cost=2,time_limit=120):
+    """
+    Description: point Trajectory Optimization
+    Inputs:
+        system: control system from hard contact time-stepping with convex hull method
+        x_0: initial point
+        T= trajectory length
+        list_of_goals: reaching one of the goals is enough. Each goal is an AH_polytope
+        eps= vector, box for how much freedom is given to deviate from x_0 in each direction
+    Method:
+        Uses convexhull formulation
+    """
+    t_start=time.time()
+    model=Model("Point Trajectory Optimization using TISHCOM Formulation")
+    x=model.addVars(range(T+1),range(system.n),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x")
+    u=model.addVars(range(T),range(system.m_u),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u")
+    u_lambda=model.addVars(range(T),range(system.m_lambda),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_lambda")
+    mu=model.addVars(list_of_goals,vtype=GRB.BINARY,name="mu")
+    _p=model.addVars(tuplelist([(goal,j) for goal in list_of_goals for j in range(goal.G.shape[1])]),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="p")
+    ## tau, T Variables
+#    x_time=model.addVars(range(T+1),system.Eta,range(system.n),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x_t")
+#    u_time=model.addVars(range(T),system.Eta,range(system.m_u),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_t")
+#    u_lambda_time=model.addVars(range(T),system.Eta,range(system.m_lambda),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="lambda_t")
+#    delta_time=model.addVars(range(T),system.Eta,vtype=GRB.BINARY,name="delta_t")    
+    ## TISCHOM Variables
+    x_TISHCOM=model.addVars([(t,i,sigma,j) for t in range(T) for i in system.list_of_contact_points \
+                         for sigma in i.Sigma for j in range(system.n)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x_TISHCOM")
+    u_TISHCOM=model.addVars([(t,i,sigma,j) for t in range(T) for i in system.list_of_contact_points \
+                         for sigma in i.Sigma for j in range(system.m_u)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_TISHCOM")
+    lambda_TISHCOM=model.addVars([(t,i,sigma,j) for t in range(T) for i in system.list_of_contact_points \
+                         for sigma in i.Sigma for j in range(system.m_lambda)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="lambda_TISCHOM")
+    delta_TISHCOM=model.addVars([(t,i,sigma) for t in range(T) for i in system.list_of_contact_points \
+                         for sigma in i.Sigma],vtype=GRB.BINARY,name="delta_TISHCOM")
+    model.update()
+    # Initial Condition    
+    print "epsilon is",eps,"initial condition:",x0.T
+    for j in range(system.n):
+        model.addConstr(x[0,j]<=x0[j,0]+eps*system.scale[j])
+        model.addConstr(x[0,j]>=x0[j,0]-eps*system.scale[j])
+#         model.addConstr(x[0,j]==x0[j,0])
+ 
+    # Equation a: Mode Constaints
+    for t in range(T):
+        tau=list_of_environemnts[t]
+        for i in system.list_of_contact_points:
+            for sigma in i.Sigma:
+                for row in range(system.E[tau][i][sigma].shape[0]):
+                    tau=list_of_environemnts[t]
+                    a_x=LinExpr([(system.E[tau][i][sigma][row,k],x_TISHCOM[t,i,sigma,k]) for k in range(system.n)])
+                    a_u=LinExpr([(system.E[tau][i][sigma][row,k+system.n],u_TISHCOM[t,i,sigma,k])  for k in range(system.m_u)])
+                    a_lambda=LinExpr([(system.E[tau][i][sigma][row,k+system.n+system.m_u],lambda_TISHCOM[t,i,sigma,k]) for k in range(system.m_lambda)])
+                    model.addConstr(a_x+a_u+a_lambda <= system.e[tau][i][sigma][row,0]*delta_TISHCOM[t,i,sigma])
+                        
+    # Equation b: Convexhull Dynamics
+    model.addConstrs(x[t,j]==x_TISHCOM.sum(t,i,"*",j) for t in range(T) \
+                                         for i in  system.list_of_contact_points for j in range(system.n))
+    model.addConstrs(u[t,j]==u_TISHCOM.sum(t,i,"*",j) for t in range(T) \
+                                         for i in  system.list_of_contact_points for j in range(system.m_u))
+    model.addConstrs(u_lambda[t,j]==lambda_TISHCOM.sum(t,i,"*",j) for t in range(T) \
+                                         for i in  system.list_of_contact_points for j in range(system.m_lambda))
+    model.addConstrs(1==delta_TISHCOM.sum(t,i,"*") for t in range(T) \
+                                         for i in  system.list_of_contact_points)
+    
+    # Equation c: Evolution
+    for t in range(T):
+        for row in range(system.n):
+            tau=list_of_environemnts[t]
+            a_x=LinExpr([(system.A[tau][row,k],x[t,k]) for k in range(system.n)])
+            a_u=LinExpr([(system.B_u[tau][row,k],u[t,k]) for k in range(system.m_u)])
+            a_lambda=LinExpr([(system.B_lambda[tau][row,k],u_lambda[t,k]) for k in range(system.m_lambda)])
+            a_c=system.c[tau][row,0]
+            model.addConstr(x[t+1,row]==a_x+a_u+a_lambda+a_c)
+    
+    
+    # Goal Constraints
+    for j in range(system.n):
+        L=LinExpr()
+        L.add(LinExpr([(goal.G[j,k],_p[goal,k]) for goal in list_of_goals for k in range(goal.G.shape[1])]))
+        L.add(LinExpr([(goal.x[j,0],mu[goal]) for goal in list_of_goals]))
+        model.addConstr(L==x[T,j])
+    model.addConstr(mu.sum("*")==1)
+    for goal in list_of_goals:
+        for j in range(goal.G.shape[1]):
+            model.addConstr(_p[goal,j]<=mu[goal])
+            model.addConstr(-_p[goal,j]<=mu[goal])
+    # Cost Engineering
+    print "model built in",time.time()-t_start," seconds"
+    # Optimize
+    model.write("point_trajectory_time_stepping.lp")
+    model.setParam("MIPfocus",1)
+    model.setParam('TimeLimit', 6)
+    if cost==2:
+        J=QuadExpr(sum([u[t,j]*u[t,j] for j in optimize_controls_indices for t in range(T)]))
+        model.setObjective(J,GRB.MINIMIZE)
+        model.setParam('TimeLimit', time_limit)
+        model.optimize()
+    elif cost==1:
+        u_abs=model.addVars(range(T),optimize_controls_indices,obj=1)
+        model.update()
+        model.addConstrs(u[t,j]<=u_abs[t,j] for t in range(T) for j in optimize_controls_indices)
+        model.addConstrs(-u[t,j]<=u_abs[t,j] for t in range(T) for j in optimize_controls_indices)
+        model.optimize()
+    else:
+        model.optimize()
+    x_n={t:np.array([x[t,i].X for i in range(system.n)]) for t in range(T+1)}
+    u_n={t:np.array([u[t,i].X for i in range(system.m_u)]) for t in range(T)}
+    lambda_n={t:np.array([u_lambda[t,i].X for i in range(system.m_lambda)]) for t in range(T)}
+    mode_n={}
+    for t in range(T):
+        mode_n[t]=[None]*len(system.list_of_contact_points)
+        for tau in system.Eta:
+            for i in system.list_of_contact_points:
+                for sigma in i.Sigma:
+                    if np.linalg.norm(delta_TISHCOM[t,i,sigma].X-1)<=10**-1:
+                        mode_n[t][i.index]=sigma
+        mode_n[t]=tuple(mode_n[t])
+    print "*"*80
+    return x_n,u_n,lambda_n,mode_n
+
     
 def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[]):
     """
@@ -298,14 +418,12 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[
         GT=sp.linalg.block_diag(G_t,theta_t)
         xu=np.vstack((x_t,u_t))
         subset_LP(model,xu,GT,Ball(2*q),_p)
-
-
     x_T=np.array([x[T,j] for j in range(n)]).reshape(n,1)
     G_T=np.array([G[T,i,j] for i in range(n) for j in range(q)]).reshape(n,q)
     z=zonotope(x_T,G_T)
     subset_zonotopes(model,z,goal)
     # Cost function
-    J=LinExpr([(1.0/scale[i],G[t,i,i]) for t in range(T+1) for i in range(n)])
+    J=LinExpr([(1.0/scale[i]*(1/(t+1.5)),G[t,i,i]) for i in range(n) for t in range(T) if t%5==0])
     model.setObjective(J)
     model.write("polytopic_trajectory.lp")
     model.setParam('TimeLimit', 150)
@@ -318,6 +436,59 @@ def polytopic_trajectory_given_modes(x0,list_of_cells,goal,eps=0,order=1,scale=[
         theta_num[t]=np.array([[theta[t,i,j].X] for i in range(m) for j in range(q)]).reshape(m,q)
         u_num[t]=np.array([[u[t,i].X] for i in range(m) ]).reshape(m,1)
     return (x_num,u_num,G_num,theta_num)
+
+def point_trajectory_given_modes_and_central_traj(x_traj,list_of_cells,goal,eps=0,scale=[]):
+    """
+    Description: 
+        Point Trajectory Optimization with the ordered list of polytopes given
+        This is a convex program as mode sequence is already given
+        list_of_cells: each cell has the following attributes: A,B,c, and polytope(H,h)
+    """
+    model=Model("Fixed Mode Polytopic Trajectory")
+    T=len(list_of_cells)
+    n,m=list_of_cells[0].B.shape
+    x=model.addVars(range(T+1),range(n),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x")
+    u=model.addVars(range(T),range(m),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u")
+    model.update()
+    if len(scale)==0:
+        scale=np.ones(x_traj[0].shape[0])    
+    print "inside function epsilon is",eps
+    for j in range(n):
+        model.addConstr(x[0,j]<=x_traj[0][j]+eps*scale[j])
+        model.addConstr(x[0,j]>=x_traj[0][j]-eps*scale[j])
+
+    for t in range(T):
+        cell=list_of_cells[t]
+        A,B,c,_p=cell.A,cell.B,cell.c,cell.p
+        for j in range(n):
+            expr_x=LinExpr([(A[j,k],x[t,k]) for k in range(n)])
+            expr_u=LinExpr([(B[j,k],u[t,k]) for k in range(m)])
+            model.addConstr(x[t+1,j]==expr_x+expr_u+c[j,0])
+        x_t=np.array([x[t,j] for j in range(n)]).reshape(n,1)
+        u_t=np.array([u[t,j] for j in range(m)]).reshape(m,1)
+        xu=np.vstack((x_t,u_t))
+        subset_LP(model,xu,np.zeros((n+m,1)),Ball(1),_p)
+
+
+    x_T=np.array([x[T,j] for j in range(n)]).reshape(n,1)
+    z=zonotope(x_T,np.zeros((n,1)))
+    subset_generic(model,z,goal)
+    # Cost function
+    J=QuadExpr()
+    for t in range(T):
+        for i in range(n):
+            J.add(x[t,i]*x[t,i]-x[t,i]*x_traj[t][i])
+    model.setObjective(J)
+    model.write("polytopic_trajectory.lp")
+    model.setParam('TimeLimit', 150)
+    model.optimize()
+    x_num,u_num={},{}
+    for t in range(T+1):
+        x_num[t]=np.array([[x[t,j].X] for j in range(n)]).reshape(n,1)
+    for t in range(T):
+        u_num[t]=np.array([[u[t,i].X] for i in range(m) ]).reshape(m,1)
+    return (x_num,u_num)
+
 
 
 def disturbed_polytopic_trajectory_given_regions(x0,list_of_cells,goal,eps=0,order=1,scale=[]):
