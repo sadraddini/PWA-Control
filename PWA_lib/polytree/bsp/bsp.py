@@ -13,12 +13,14 @@ from scipy.optimize import linprog as lp
 from gurobipy import Model,LinExpr,QuadExpr,GRB
 
 from pypolycontain.utils.utils import valuation
-from pypolycontain.lib.zonotope import zonotope
+#from pypolycontain.lib.zonotope import zonotope
 from pypolycontain.lib.polytope import polytope
+#from pypolycontain.lib.objects import H_polytope as polytope
+
 
 from pypolycontain.lib.AH_polytope import minimum_distance,is_inside,distance_point
 from pypolycontain.lib.hausdorff.hausdorff import Hausdorff_directed
-
+from pypolycontain.lib.operations import directed_Hausdorff_distance,distance_polytopes
 
 from pypolycontain.visualization.visualize_2D import visualize_2D_zonotopes_ax as visZ
 from pypolycontain.visualization.visualize_2D import visualize_2D_ax as vis
@@ -53,14 +55,28 @@ class cell:
         X=np.hstack([z.x for z in self.list_of_polytopes])
         u,s,v=np.linalg.svd(X)
         c_u=u[random.randint(1,len(u))-1,:].reshape(len(u),1)
-        c=c_u+np.random.normal(size=(len(u),1))
+        c=c_u+10*np.random.normal(size=(len(u),1))
+        # random axis aligned direction
+#        n=z.x.shape[0]
+#        c=np.zeros((n,1))
+#        i=random.randint(0,n-1)
+#        c[i,0]=1
+        # End of selecting direction
         P1,P2,(c,g)=_cut_half(c,self.polytope)
         S={}
         self.hyperplane=(c,g)
         for C in [P1,P2]:
-            D_max={P: Hausdorff_directed(C,P) for P in self.list_of_polytopes} 
+            # With Boxes
+            D_max={P: directed_Hausdorff_distance(C,P) for P in self.list_of_polytopes} 
+#            print "D_max,new",D_max            
+#            D_max={P: Hausdorff_directed(P,C) for P in self.list_of_polytopes} 
+#            print "D_max,old",D_max
             d_max_min=min(D_max.values())
-            D_min={P: minimum_distance(C,P) for P in self.list_of_polytopes} 
+#            print d_max_min
+            D_min={P: distance_polytopes(C,P)[0] for P in self.list_of_polytopes} 
+#            print "D_min,new",D_min
+#            D_min={P: minimum_distance(P,C) for P in self.list_of_polytopes} 
+#            print "D_min,old",D_min
             list_of_polytopes=[P for P in self.list_of_polytopes if D_min[P]<=d_max_min]
             S[C]=cell(C,list_of_polytopes,depth=self.depth+1,parent=self)
         self.child_left,self.child_right=S[P1],S[P2]
@@ -69,7 +85,7 @@ class cell:
     def shorten_list_by_J(self,tol=10**-4):
         list_of_inside_polytopes=[]
         for P in self.list_of_polytopes:
-            if Hausdorff_directed(self.polytope,P)<=tol:
+            if directed_Hausdorff_distance(self.polytope,P)<=tol:
                 list_of_inside_polytopes.append(P)
         if len(list_of_inside_polytopes)<=1:
             return # List is empty or singular. Just return

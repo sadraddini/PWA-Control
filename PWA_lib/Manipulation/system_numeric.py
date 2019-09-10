@@ -116,15 +116,15 @@ def trajectory_to_list_of_linear_cells(sys,Eta,x_traj,u_traj,lambda_traj,mode_tr
         list_of_cells.append(new_cell)
         # Verify correctness:
         v=np.hstack((x_traj[t],u_traj[t],lambda_traj[t])).reshape(p.n,1)
-        if p.if_inside(v,tol=10**-5)==False:
+        if p.if_inside(v,tol=10**-4)==False:
             raise ValueError("Nominal Trajectory not inside polytope! Maybe an issue of numerical tolerance")
     return list_of_cells 
 
-def environment_from_state(symbolic_sys,x,h):
+def environment_from_state(symbolic_sys,x,h,name=0):
     """
     Takes a symbolic system, state, control, contact forces and time-step, build an environment
     """
-    Eta_0=environment(0)
+    Eta_0=environment(name)
     Eta_0.dict_of_values={}
     for i in range(symbolic_sys.n):
         Eta_0.dict_of_values[symbolic_sys.x[i]]=x[i]
@@ -156,7 +156,7 @@ def hybrid_reachable_sets_from_state(symbolic_sys,x,h,epsilon_min,epsilon_max):
     E,e=enumerate_modes_E(sys,Eta_now)
     list_of_sets=[]
     for mode in sys.Sigma:
-        H=E[mode][:,symbolic_sys.n:]
+        H=E[mode][:,symbolic_sys.n:]      
         q=H.shape[0]
         h=e[mode].reshape(q,1)-np.dot(E[mode][:,:symbolic_sys.n],x.reshape(symbolic_sys.n,1))
         p=polytope(H,h)
@@ -184,7 +184,6 @@ def trajectory_to_list_of_linear_cells_full_linearization(symbolic_sys,x_traj,u_
         list_of_cells.append(new_cell)
         # Verify correctness:
         v=np.hstack((x_traj[t],u_traj[t],lambda_traj[t])).reshape(p.n,1)
-#        print p.h-np.dot(p.H,v)
-#        if p.if_inside(v,tol=10**-1)==False:
+#        if p.if_inside(v,tol=10**-3)==False:
 #            raise ValueError("Nominal Trajectory not inside polytope! Maybe an issue of numerical tolerance")
     return list_of_cells

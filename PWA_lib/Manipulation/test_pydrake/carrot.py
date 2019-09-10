@@ -19,8 +19,10 @@ from PWA_lib.Manipulation.system_symbolic_pydrake import system_symbolic
 from PWA_lib.Manipulation.system_numeric import system_hard_contact_PWA_numeric as system_numeric
 from PWA_lib.Manipulation.system_numeric import environment,merge_timed_vectors_glue,merge_timed_vectors_skip,\
     trajectory_to_list_of_linear_cells,trajectory_to_list_of_linear_cells_full_linearization,\
-    PWA_cells_from_state,hybrid_reachable_sets_from_state
-from PWA_lib.trajectory.poly_trajectory import point_trajectory_tishcom,polytopic_trajectory_given_modes
+    PWA_cells_from_state,hybrid_reachable_sets_from_state,environment_from_state
+from PWA_lib.trajectory.poly_trajectory import point_trajectory_tishcom,\
+    polytopic_trajectory_given_modes,point_trajectory_given_modes_and_central_traj,\
+    point_trajectory_tishcom_time_varying
 
 
 mysystem=system_symbolic("Carrot", 2)
@@ -48,6 +50,7 @@ mysystem.B=np.zeros((3,0))
 # Mass Matrix
 M=1
 I=M*R**2*(1/2.0-16/(9*np.pi**2))
+h=0.05
 mysystem.M=blk(*[M,M,I])
 mysystem.M_inv=np.linalg.inv(mysystem.M)
 
@@ -99,21 +102,27 @@ J_3=np.hstack((J_3n,J_3t))
 C3=contact_point_symbolic_2D(mysystem,phi=phi_3,psi=psi_3,J=J_3,friction=0.5,name="left finger")
 #C3=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.5,name="right finger")
 C3.no_contact=False
+C3.sliding=False
 
 # Build the Symbolic MLD system
 mysystem.build_and_linearize()
 sys=system_numeric(mysystem)
 
+x_m_0=0.11
+y_m_0=0.85
+theta_m_0=1.39
+s_m_0=0.85
+
 Eta_1=environment(0)
-Eta_1.dict_of_values={x:0,y:R-p,theta:0.25,x_m:0.18,y_m:0.82,theta_m:np.pi/2.0-0.2,s_m:0.8,
+Eta_1.dict_of_values={x:0,y:R-p,theta:0.125,x_m:x_m_0,y_m:y_m_0,theta_m:theta_m_0,s_m:s_m_0,
      mysystem.v_o[0]:0,mysystem.v_o[1]:0,mysystem.v_o[2]:0,
      mysystem.u_lambda[0]:0,mysystem.u_lambda[1]:0,mysystem.u_lambda[2]:0,mysystem.u_lambda[3]:0,
      mysystem.u_lambda[4]:0,mysystem.u_lambda[5]:0,
      mysystem.u_m[0]:0,mysystem.u_m[1]:0,mysystem.u_m[2]:0,mysystem.u_m[3]:0,
-     mysystem.h:0.06}
+     mysystem.h:h}
     
-epsilon_max=np.array([2,2,1,10,10,10,10,50,50,50,3,3,3,3,500,500,500,500,500,500]).reshape(20,1)
-epsilon_min=-np.array([2,2,0,10,10,10,10,50,50,50,3,3,3,3,500,500,500,500,500,500]).reshape(20,1)
+epsilon_max=np.array([2,2,1,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,500,500]).reshape(20,1)
+epsilon_min=-np.array([2,2,0,10,10,10,10,50,50,50,1,1,1,1,500,500,500,500,500,500]).reshape(20,1)
 sys.add_environment(Eta_1,epsilon_max,epsilon_min)
 #sys.add_environment(Eta_1)
 
@@ -123,18 +132,30 @@ sys.add_environment(Eta_1,epsilon_max,epsilon_min)
 up_shift=0
 right_shift=0
 theta_shift=0.25
-x_goal=np.array([0,R-p,theta_shift,0.18,0.82,np.pi/2-0.2,0.8,0,0,0]).reshape(10,1).reshape(10,1)
-x0=np.array([0,R-p,0,0.18,0.82,np.pi/2-0.3,0.8,0,0,0]).reshape(10,1).reshape(10,1)
+x_goal=np.array([0,R-p,theta_shift,x_m_0,y_m_0,theta_m_0,s_m_0,0,0,0]).reshape(10,1)
+x0=np.array([0,R-p,0,x_m_0,y_m_0,theta_m_0,s_m_0,0,0,0]).reshape(10,1).reshape(10,1)
 sys.goal=zonotope(x_goal.reshape(10,1),100*np.diag([1,1,0,1,1,1,1,0,0,0]))
 T=10
-x_traj,u_traj,u_lambda,mode=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+sys.scale=np.array([0,0,0,1,1,1,1,0,0,0])
+x_traj,u_traj,u_lambda,mode=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1,eps=0.0)
 
 list_of_linear_cells=trajectory_to_list_of_linear_cells(sys,Eta_1,x_traj,u_traj,u_lambda,mode)
-list_of_linear_cells_full=trajectory_to_list_of_linear_cells_full_linearization(mysystem,x_traj,u_traj,u_lambda,mode,0.06,epsilon_min,epsilon_max)
-list_of_linear_cells_PWA=PWA_cells_from_state(mysystem,x_traj[2],0.06,epsilon_min,epsilon_max)
-list_of_PWA_sets=hybrid_reachable_sets_from_state(mysystem,x_traj[2],0.06,epsilon_min,epsilon_max)
-raise 1
-x,u,G,theta=polytopic_trajectory_given_modes(x0,list_of_linear_cells,sys.goal,eps=0,order=1,scale=[])
+list_of_linear_cells_full=trajectory_to_list_of_linear_cells_full_linearization(mysystem,x_traj,u_traj,u_lambda,mode,h,epsilon_min,epsilon_max)
+list_of_linear_cells_PWA=PWA_cells_from_state(mysystem,x_traj[2],h,epsilon_min,epsilon_max)
+list_of_reachable_sets=hybrid_reachable_sets_from_state(mysystem,x_traj[1],h,epsilon_min,epsilon_max)
+# The time varying PWA system:
+list_of_env=[environment_from_state(mysystem,x_traj[t],h) for t in range(T)]
+sys=system_numeric(mysystem)
+for env in list_of_env:
+    sys.add_environment(env,epsilon_max,epsilon_min)
+sys.scale=np.array([0,0,0,1,1,1,1,0,0,0])
+sys.goal=zonotope(x_goal.reshape(10,1),100*np.diag([1,1,0,1,1,1,1,0,0,0]))
+x_TV,u_TV,lambda_TV,mode_TV=point_trajectory_tishcom_time_varying(sys,list_of_env,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+# Check the linear one
+x,u=point_trajectory_given_modes_and_central_traj(x_traj,list_of_linear_cells_full,sys.goal)
+#raise 1
+#x,u,G,theta=polytopic_trajectory_given_modes(x0,list_of_linear_cells_full,sys.goal,eps=0,order=1,scale=[])
+#raise 1
 
 """
 Visualization
@@ -195,7 +216,7 @@ def generate_figures(trajectory_of_x,trajectory_of_lambda):
             ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
         fig.savefig('figures/carrot_%d.png'%t, dpi=100)
 
-generate_figures(x_traj,u_lambda)
+generate_figures(x_TV,lambda_TV)
     
 """
 Numericals

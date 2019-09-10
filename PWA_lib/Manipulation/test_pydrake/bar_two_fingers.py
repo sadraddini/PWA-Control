@@ -15,8 +15,12 @@ from pypolycontain.lib.zonotope import zonotope
 from PWA_lib.Manipulation.contact_point_pydrake import contact_point_symbolic_2D
 from PWA_lib.Manipulation.system_symbolic_pydrake import system_symbolic
 from PWA_lib.Manipulation.system_numeric import system_hard_contact_PWA_numeric as system_numeric
-from PWA_lib.Manipulation.system_numeric import environment
-from PWA_lib.trajectory.poly_trajectory import point_trajectory_tishcom
+from PWA_lib.Manipulation.system_numeric import environment,merge_timed_vectors_glue,merge_timed_vectors_skip,\
+    trajectory_to_list_of_linear_cells,trajectory_to_list_of_linear_cells_full_linearization,\
+    PWA_cells_from_state,hybrid_reachable_sets_from_state,environment_from_state
+from PWA_lib.trajectory.poly_trajectory import point_trajectory_tishcom,\
+    polytopic_trajectory_given_modes,point_trajectory_given_modes_and_central_traj,\
+    point_trajectory_tishcom_time_varying
 
 
 mysystem=system_symbolic("Balacning a bar", 2)
@@ -36,6 +40,7 @@ M=1
 I=M/3.0
 mysystem.M=blk(*[M,M,I])
 mysystem.M_inv=np.linalg.inv(mysystem.M)
+h=0.05
 
 
 psi_1= (x_1-x)*sym.cos(theta) + (y_1-y)*sym.sin(theta)
@@ -45,7 +50,7 @@ J_1t=np.array([sym.cos(theta),sym.sin(theta),0]).reshape(3,1)
 J_1=np.hstack((J_1n,J_1t))
 C1=contact_point_symbolic_2D(mysystem,phi=phi_1,psi=psi_1,J=J_1,friction=0.3,name="contact point")
 #C1.sliding=False
-C1.no_contact=False
+#C1.no_contact=False
 
 psi_2= (x_2-x)*sym.cos(theta) + (y_2-y)*sym.sin(theta)
 phi_2=-( (x_2-x)*sym.sin(-theta) + (y_2-y)*sym.cos(theta)  )
@@ -54,7 +59,7 @@ J_2t=np.array([sym.cos(theta),sym.sin(theta),0]).reshape(3,1)
 J_2=np.hstack((J_2n,J_2t))
 C2=contact_point_symbolic_2D(mysystem,phi=phi_2,psi=psi_2,J=J_2,friction=0.3,name="contact point")
 #C2.sliding=False
-C2.no_contact=False
+#C2.no_contact=False
 
 mysystem.build_and_linearize()
 
@@ -63,21 +68,41 @@ Eta=environment(0)
 Eta.dict_of_values={x:0,y:0,theta:0,x_1:1,x_2:-1,y_1:0,y_2:0,
      mysystem.v_o[0]:0,mysystem.v_o[1]:0,mysystem.v_o[2]:0,
      mysystem.u_lambda[0]:M*g/2*0,mysystem.u_lambda[1]:0,mysystem.u_lambda[2]:M*g/2*0,mysystem.u_lambda[3]:0,
-     mysystem.u_m[0]:1,mysystem.u_m[1]:0,mysystem.u_m[2]:1,mysystem.u_m[3]:0,
-     mysystem.h:0.02}
+     mysystem.u_m[0]:0,mysystem.u_m[1]:0,mysystem.u_m[2]:0,mysystem.u_m[3]:0,
+     mysystem.h:h}
 
 epsilon_max=np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,50,1000,50,1000]).reshape(18,1)
 epsilon_min=-np.array([2,2,2,1,1,1,1,5,5,5,1,1,1,1,50,1000,50,1000]).reshape(18,1)
 sys=system_numeric(mysystem)
 sys.add_environment(Eta,epsilon_max,epsilon_min)
 
-y_goal=0.5
-#x_goal=np.array([0,y_goal,0.0,1,y_goal,-1,y_goal,0,0,0]).reshape(10,1)
-x_goal=np.array([0,0,0.0,1,0,-1,0,0,0,0]).reshape(10,1)
+y_goal=0.0
+x_goal=np.array([0,y_goal,0.0,1,y_goal,-1,y_goal,0,0,0]).reshape(10,1)
+#x_goal=np.array([0,0,0.0,1,0,-1,0,0,0,0]).reshape(10,1)
 sys.goal=zonotope(x_goal.reshape(10,1),np.diag([0,0,0,0,0,0,0,0,0,0]))
-x0=np.array([0.0,0,0.0,1,0,-1,-0.0,0,1,0]).reshape(10,1)
-T=40
-x,u,u_lambda,x_tishcom,x_time=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+x0=np.array([0.0,0,0.0,1,0,-1,0,0.8,0,0]).reshape(10,1)
+T=20
+sys.scale=np.array([0,0,0,1,1,1,1,0,0,0])
+x,u_traj,u_lambda,mode=point_trajectory_tishcom(sys,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+
+list_of_linear_cells=trajectory_to_list_of_linear_cells(sys,Eta,x,u_traj,u_lambda,mode)
+#list_of_linear_cells_full=trajectory_to_list_of_linear_cells_full_linearization(mysystem,x_traj,u_traj,u_lambda,mode,h,epsilon_min,epsilon_max)
+#list_of_linear_cells_PWA=PWA_cells_from_state(mysystem,x_traj[2],h,epsilon_min,epsilon_max)
+#list_of_reachable_sets=hybrid_reachable_sets_from_state(mysystem,x_traj[1],h,epsilon_min,epsilon_max)
+# The time varying PWA system:
+#list_of_env=[environment_from_state(mysystem,x_traj[t],h,name=t) for t in range(T)]
+#sys=system_numeric(mysystem)
+#for env in list_of_env:
+#    sys.add_environment(env,epsilon_max,epsilon_min)
+#sys.scale=np.array([0,0,0,1,1,1,1,0,0,0])
+#sys.goal=zonotope(x_goal.reshape(10,1),0.0*np.diag([1,1,1,1,1,1,1,1,1,1]))
+#x_TV,u_TV,lambda_TV,mode_TV=point_trajectory_tishcom_time_varying(sys,list_of_env,x0,[sys.goal],T,optimize_controls_indices=[0,1,2,3],cost=1)
+# Check the linear one
+x,u=point_trajectory_given_modes_and_central_traj(x,list_of_linear_cells,sys.goal)
+#raise 1
+x,u,G,theta=polytopic_trajectory_given_modes(x0,list_of_linear_cells,sys.goal,eps=0,order=1,scale=[])
+#raise 1
+
 
 def env_q(x):
     return {mysystem.q[i]:x[i] for i in range(len(mysystem.q))}
@@ -95,7 +120,7 @@ from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 
 def animate(X,ax1,fig):
-    x,y,theta,x_1,y_1,x_2,y_2=X[0:7]
+    x,y,theta,x_1,y_1,x_2,y_2=X[0:7,0]
     a=0.4
     b=2
     R=np.array([[np.cos(theta),-np.sin(theta)],[np.sin(theta),np.cos(theta)]])
@@ -126,19 +151,20 @@ def animate(X,ax1,fig):
     ax1.plot([x_1,x_2],[y_1,y_2],'*',linewidth=3,markersize=10)
     ax1.grid(color=(0,0,0), linestyle='--', linewidth=0.5)
 
-def generate_figures():    
+def generate_figures(trajectory_x,trajectory_u_lambda):    
     for t in range(T+1):
         fig,ax = plt.subplots()
         fig.set_size_inches(10, 8)
         if t!=T:
             ax.set_title(r'%d/%d Balancing the Rod'%(t,T)+'\n'+
                          r'$\lambda^{rF}_n: %0.1f * \lambda^{lF}_n: %0.1f $'
-                         %(u_lambda[t][0],u_lambda[t][2])
+                         %(trajectory_u_lambda[t][0],trajectory_u_lambda[t][2])
                          +'\n'+r'$\lambda^{rF}_t: %0.1f * \lambda^{lF}_t: %0.1f $'
-                         %(u_lambda[t][1],u_lambda[t][3]))
-        animate(x[t],ax,fig)
+                         %(trajectory_u_lambda[t][1],trajectory_u_lambda[t][3]))
+        animate(trajectory_x[t],ax,fig)
         if t==-1:
             ax.arrow(-1.8, 0.1, 0.3, 0.0, head_width=0.3, head_length=0.3, linewidth=10, fc='k', ec='k')
         fig.savefig('figures/bar_%d.png'%t, dpi=100)
 
-generate_figures()
+generate_figures(x,u_lambda)
+

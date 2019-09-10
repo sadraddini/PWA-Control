@@ -272,12 +272,7 @@ def point_trajectory_tishcom_time_varying(system,list_of_environemnts,x0,list_of
     u=model.addVars(range(T),range(system.m_u),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u")
     u_lambda=model.addVars(range(T),range(system.m_lambda),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_lambda")
     mu=model.addVars(list_of_goals,vtype=GRB.BINARY,name="mu")
-    _p=model.addVars(tuplelist([(goal,j) for goal in list_of_goals for j in range(goal.G.shape[1])]),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="p")
-    ## tau, T Variables
-#    x_time=model.addVars(range(T+1),system.Eta,range(system.n),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x_t")
-#    u_time=model.addVars(range(T),system.Eta,range(system.m_u),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="u_t")
-#    u_lambda_time=model.addVars(range(T),system.Eta,range(system.m_lambda),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="lambda_t")
-#    delta_time=model.addVars(range(T),system.Eta,vtype=GRB.BINARY,name="delta_t")    
+    _p=model.addVars(tuplelist([(goal,j) for goal in list_of_goals for j in range(goal.G.shape[1])]),lb=-GRB.INFINITY,ub=GRB.INFINITY,name="p")  
     ## TISCHOM Variables
     x_TISHCOM=model.addVars([(t,i,sigma,j) for t in range(T) for i in system.list_of_contact_points \
                          for sigma in i.Sigma for j in range(system.n)],lb=-GRB.INFINITY,ub=GRB.INFINITY,name="x_TISHCOM")
@@ -301,7 +296,6 @@ def point_trajectory_tishcom_time_varying(system,list_of_environemnts,x0,list_of
         for i in system.list_of_contact_points:
             for sigma in i.Sigma:
                 for row in range(system.E[tau][i][sigma].shape[0]):
-                    tau=list_of_environemnts[t]
                     a_x=LinExpr([(system.E[tau][i][sigma][row,k],x_TISHCOM[t,i,sigma,k]) for k in range(system.n)])
                     a_u=LinExpr([(system.E[tau][i][sigma][row,k+system.n],u_TISHCOM[t,i,sigma,k])  for k in range(system.m_u)])
                     a_lambda=LinExpr([(system.E[tau][i][sigma][row,k+system.n+system.m_u],lambda_TISHCOM[t,i,sigma,k]) for k in range(system.m_lambda)])
@@ -319,8 +313,8 @@ def point_trajectory_tishcom_time_varying(system,list_of_environemnts,x0,list_of
     
     # Equation c: Evolution
     for t in range(T):
+        tau=list_of_environemnts[t]
         for row in range(system.n):
-            tau=list_of_environemnts[t]
             a_x=LinExpr([(system.A[tau][row,k],x[t,k]) for k in range(system.n)])
             a_u=LinExpr([(system.B_u[tau][row,k],u[t,k]) for k in range(system.m_u)])
             a_lambda=LinExpr([(system.B_lambda[tau][row,k],u_lambda[t,k]) for k in range(system.m_lambda)])
@@ -344,7 +338,7 @@ def point_trajectory_tishcom_time_varying(system,list_of_environemnts,x0,list_of
     # Optimize
     model.write("point_trajectory_time_stepping.lp")
     model.setParam("MIPfocus",1)
-    model.setParam('TimeLimit', 6)
+    model.setParam('TimeLimit', 20)
     if cost==2:
         J=QuadExpr(sum([u[t,j]*u[t,j] for j in optimize_controls_indices for t in range(T)]))
         model.setObjective(J,GRB.MINIMIZE)
@@ -364,11 +358,10 @@ def point_trajectory_tishcom_time_varying(system,list_of_environemnts,x0,list_of
     mode_n={}
     for t in range(T):
         mode_n[t]=[None]*len(system.list_of_contact_points)
-        for tau in system.Eta:
-            for i in system.list_of_contact_points:
-                for sigma in i.Sigma:
-                    if np.linalg.norm(delta_TISHCOM[t,i,sigma].X-1)<=10**-1:
-                        mode_n[t][i.index]=sigma
+        for i in system.list_of_contact_points:
+            for sigma in i.Sigma:
+                if np.linalg.norm(delta_TISHCOM[t,i,sigma].X-1)<=10**-1:
+                    mode_n[t][i.index]=sigma
         mode_n[t]=tuple(mode_n[t])
     print "*"*80
     return x_n,u_n,lambda_n,mode_n
@@ -484,9 +477,9 @@ def point_trajectory_given_modes_and_central_traj(x_traj,list_of_cells,goal,eps=
     model.optimize()
     x_num,u_num={},{}
     for t in range(T+1):
-        x_num[t]=np.array([[x[t,j].X] for j in range(n)]).reshape(n,1)
+        x_num[t]=np.array([[x[t,j].X] for j in range(n)])
     for t in range(T):
-        u_num[t]=np.array([[u[t,i].X] for i in range(m) ]).reshape(m,1)
+        u_num[t]=np.array([[u[t,i].X] for i in range(m) ])
     return (x_num,u_num)
 
 
